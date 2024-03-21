@@ -53,6 +53,9 @@ class test_connection implements endpoint_interface {
                 'status' => 'OK',
                 'url' => $CFG->wwwroot,
                 'site_fullname' => $SITE->fullname,
+                'logo' => $renderer->get_logo_url(300, 300)->raw_out(),
+                'theme' => $CFG->theme,
+                'moodle_version' => $CFG->release,
         ];
 
         return $data;
