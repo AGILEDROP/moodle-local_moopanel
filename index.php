@@ -33,15 +33,13 @@ require('classes/error_handler.php');
 
 set_exception_handler(\local_moopanel\error_handler::throw_error());
 
-
-
 $server = new \local_moopanel\moopanel_api();
 
 $apikey = false;
 $ip = false;
 
-if (isset($_SERVER['HTTP_API_KEY'])) {
-    $apikey = $_SERVER['HTTP_API_KEY'];
+if (isset($_SERVER['HTTP_X_API_KEY'])) {
+    $apikey = $_SERVER['HTTP_X_API_KEY'];
 }
 
 $ip = $_SERVER['REMOTE_ADDR'];
