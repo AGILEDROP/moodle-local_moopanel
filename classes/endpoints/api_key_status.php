@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Moopanel API endpoint Dashboard.
+ * Endpoint for manage Moopanel API - key.
  *
- * File         dashboard.php
+ * File         api_key_status.php
  * Encoding     UTF-8
  *
  * @package     local_moopanel
@@ -32,28 +32,46 @@ namespace local_moopanel\endpoints;
 use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
 
-class dashboard extends endpoint implements endpoint_interface {
+class api_key_status extends endpoint implements endpoint_interface {
 
     public function define_allowed_request_methods() {
-        return ['GET'];
+        return ['GET', 'POST'];
     }
 
     public function process_request($requestmethod, $requestdata, $responsetype) {
         global $CFG, $SITE, $THEME, $PAGE;
 
-        $PAGE->set_context(\context_system::instance());
-        $renderer = $PAGE->get_renderer('core');
+        switch ($requestmethod) {
+            case 'POST':
+                $this->update_api_key($requestdata);
+                break;
 
-        $data = [
-            'url' => $CFG->wwwroot,
-            'site_fullname' => $SITE->fullname,
-            'site_shortname' => $SITE->shortname,
-            'logo' => $renderer->get_logo_url(300, 300)->raw_out(),
-            'logocompact' => $renderer->get_compact_logo_url(300, 300)->raw_out(),
-            'theme' => $CFG->theme,
-            'moodle_version' => $CFG->release,
-        ];
+            case 'GET':
+                $this->get_api_key_expiration();
+                break;
+        }
+    }
 
+    private function update_api_key($requestdata) {
+        $data = [];
+        $now = time();
+
+        if (isset($requestdata['key_expiration_date'])) {
+            $timestamp = $requestdata['key_expiration_date'];
+            set_config('key_expiration_date', $timestamp, 'local_moopanel');
+            $this->responsecode = 201;
+            $this->responsemsg = 'updated';
+            $this->responsebody->key_expiration_date = $timestamp;
+        } else {
+            $this->responsecode = 400;
+            $this->responsemsg = 'Bad request.';
+            $data['Error'] = 'Missing arguments - key_expiration_date';
+            $this->responsebody = (object)$data;
+        }
+    }
+
+    private function get_api_key_expiration() {
+        $data['key_expiration_date'] = get_config('local_moopanel', 'key_expiration_date');
         $this->responsecode = 200;
         $this->responsemsg = 'OK';
         $this->responsebody = (object)$data;

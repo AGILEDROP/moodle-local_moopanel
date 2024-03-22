@@ -27,33 +27,33 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_moopanel\endpoints;
+namespace local_moopanel;
 
-use local_moopanel\endpoint;
-use local_moopanel\endpoint_interface;
+use stdClass;
 
-class test_connection extends endpoint implements endpoint_interface {
+class endpoint {
 
-    public function define_allowed_request_methods() {
-        return ['GET'];
+    public int $responsecode;
+
+    public string $responsemsg;
+
+    public stdClass $responsebody;
+
+    public function __construct() {
+        $this->responsecode = 404;
+        $this->responsemsg = '';
+        $this->responsebody = new stdClass();
+    }
+    public function get_response_code() {
+        return $this->responsecode;
     }
 
-    public function process_request($requestmethod, $requestdata, $responsetype) {
-        global $CFG, $SITE, $THEME, $PAGE;
-
-        $PAGE->set_context(\context_system::instance());
-        $renderer = $PAGE->get_renderer('core');
-
-        $data = [
-                'status' => 'OK',
-                'url' => $CFG->wwwroot,
-                'site_fullname' => $SITE->fullname,
-                'logo' => $renderer->get_logo_url(300, 300)->raw_out(),
-                'theme' => $CFG->theme,
-                'moodle_version' => $CFG->release,
-        ];
-
-        $this->responsecode = 200;
-        $this->responsebody = (object)$data;
+    public function get_response_msg() {
+        return $this->responsemsg;
     }
+
+    public function get_response() {
+        return $this->responsebody;
+    }
+
 }
