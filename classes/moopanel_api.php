@@ -44,7 +44,11 @@ class moopanel_api {
 
     private $responsetype;
 
-    private $response;
+    private $responsecode;
+
+    private $responsemsg;
+
+    private $responsebody;
 
     public function __construct() {
         $this->pluginconfig = get_config('local_moopanel');
@@ -52,7 +56,9 @@ class moopanel_api {
         $this->requestmethod = $this->set_request_method();
         $this->requestdata = [];
         $this->responsetype = 'json';
-        $this->response = new \stdClass();
+        $this->responsecode = false;
+        $this->responsemsg = false;
+        $this->responsebody = new \stdClass();
     }
 
     public function run($apikey, $ip) {
@@ -67,17 +73,23 @@ class moopanel_api {
 
         $endpointcontroller = new $classname();
 
-        $allowedmethods = $endpointcontroller->allowedmethods;
+        $allowedmethods = $endpointcontroller->define_allowed_request_methods();
 
         if (!in_array($this->requestmethod, $allowedmethods)) {
-            $this->return_bad_response(405, ['status' => 'Method not allowed.']);
+            $this->responsecode = 405;
+            $this->responsemsg = 'Method not allowed.';
+            $this->return_response();
         }
 
-        $this->response = $endpointcontroller->get_response(
+        $endpointcontroller->process_request(
                 $this->requestmethod,
                 $this->requestdata,
                 $this->responsetype
         );
+
+        $this->responsecode = $endpointcontroller->get_response_code();
+        $this->responsemsg = $endpointcontroller->get_response_msg();
+        $this->responsebody = $endpointcontroller->get_response();
 
         $this->return_response();
     }
@@ -86,7 +98,9 @@ class moopanel_api {
         $apienabled = (bool)$this->pluginconfig->apienabled;
         if (!$apienabled) {
             // Api is not enabled in moodle plugin settings.
-            $this->return_bad_response(202, ['status' => 'API disabled.']);
+            $this->responsecode = 202;
+            $this->responsemsg = 'API disabled.';
+            $this->return_response();
         }
     }
 
@@ -94,7 +108,9 @@ class moopanel_api {
 
         // Currently just simple check for auth.
         if ($apikey !== $this->pluginconfig->apikey) {
-            $this->return_bad_response(401, ['status' => 'unauthorised']);
+            $this->responsecode = 401;
+            $this->responsemsg = 'unauthorised';
+            $this->return_response();
         }
     }
 
@@ -102,19 +118,6 @@ class moopanel_api {
         return $_SERVER['REQUEST_METHOD'];
     }
 
-    protected function return_bad_response($code, $details) {
-
-        header("Content-Type: application/json; charset=UTF-8");
-
-        http_response_code($code);
-
-        foreach ($details as $key => $value) {
-            $this->response->$key = $value;
-        }
-        echo json_encode($this->response);
-
-        die;
-    }
 
     protected function parse_request() {
 
@@ -130,14 +133,24 @@ class moopanel_api {
                 $this->endpoint = $endpointcandidate;
 
             } else {
-                $this->return_bad_response(403, ['status' => 'Bad request']);
+                $this->responsecode = 403;
+                $this->responsemsg = 'Bad request.';
+                $this->return_response();
             }
         }
     }
 
     protected function return_response() {
+
+        http_response_code($this->responsecode);
+
         header("Content-Type: application/json; charset=UTF-8");
-        echo json_encode($this->response);
+
+        if ($this->responsemsg) {
+            $this->responsebody->status = $this->responsemsg;
+        }
+
+        echo json_encode($this->responsebody);
         die();
     }
 }

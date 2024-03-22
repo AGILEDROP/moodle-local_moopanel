@@ -42,8 +42,7 @@ interface endpoint_interface {
      * @param $requestmethod
      * @param $requestdata
      * @param $responsetype
-     * @return mixed
      */
-    public function get_response($requestmethod, $requestdata, $responsetype);
 
+    public function process_request($requestmethod, $requestdata, $responsetype);
 }
