@@ -38,7 +38,7 @@ class test_connection extends endpoint implements endpoint_interface {
         return ['GET'];
     }
 
-    public function process_request($requestmethod, $requestdata, $responsetype) {
+    public function process_request($requestmethod, $requestparameters, $payload = null, $responsetype = null) {
         global $CFG, $SITE, $THEME, $PAGE;
 
         $PAGE->set_context(\context_system::instance());

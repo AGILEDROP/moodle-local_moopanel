@@ -40,6 +40,8 @@ class moopanel_api {
 
     private $requestmethod;
 
+    private $requestparameters;
+
     private $requestdata;
 
     private $responsetype;
@@ -54,6 +56,7 @@ class moopanel_api {
         $this->pluginconfig = get_config('local_moopanel');
         $this->endpoint = 'test_connection';
         $this->requestmethod = $this->set_request_method();
+        $this->requestparameters = [];
         $this->requestdata = [];
         $this->responsetype = 'json';
         $this->responsecode = false;
@@ -83,6 +86,7 @@ class moopanel_api {
 
         $endpointcontroller->process_request(
                 $this->requestmethod,
+                $this->requestparameters,
                 $this->requestdata,
                 $this->responsetype
         );
@@ -120,22 +124,31 @@ class moopanel_api {
 
 
     protected function parse_request() {
+        global $_SERVER, $_POST, $_REQUEST;
 
-        // Get request variables.
-        $this->requestdata = array_merge($_GET, $_POST);
+        $urlparts = explode('/', $_SERVER['REQUEST_URI']);
+        $this->requestparameters = array_slice($urlparts, 4);
+
+        // Get request body.
+        $input = json_decode(file_get_contents('php://input'));
+        if (isset($input->data)) {
+            $this->requestdata = $input->data;
+        }
 
         // Check for endpoints.
-        if (isset($this->requestdata['operation'])) {
-            $endpointcandidate = $this->requestdata['operation'];
-            $classname = "local_moopanel\\endpoints\\" . $endpointcandidate;
+        if (isset($this->requestparameters[0])) {
+            $endpointcandidate = $this->requestparameters[0];
 
-            if (class_exists($classname)) {
-                $this->endpoint = $endpointcandidate;
+            if (!empty($endpointcandidate)) {
+                $classname = "local_moopanel\\endpoints\\" . $endpointcandidate;
 
-            } else {
-                $this->responsecode = 403;
-                $this->responsemsg = 'Bad request.';
-                $this->return_response();
+                if (class_exists($classname)) {
+                    $this->endpoint = $endpointcandidate;
+                } else {
+                    $this->responsecode = 403;
+                    $this->responsemsg = 'Bad request.';
+                    $this->return_response();
+                }
             }
         }
     }

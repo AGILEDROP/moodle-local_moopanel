@@ -38,11 +38,11 @@ interface endpoint_interface {
     public function define_allowed_request_methods();
 
     /**
-     * Return response.
      * @param $requestmethod
-     * @param $requestdata
+     * @param $requestparameters
+     * @param $payload
      * @param $responsetype
+     * @return mixed
      */
-
-    public function process_request($requestmethod, $requestdata, $responsetype);
+    public function process_request($requestmethod, $requestparameters, $payload = null, $responsetype = null);
 }
