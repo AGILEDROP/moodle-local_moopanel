@@ -38,12 +38,12 @@ class api_key_status extends endpoint implements endpoint_interface {
         return ['GET', 'POST'];
     }
 
-    public function process_request($requestmethod, $requestdata, $responsetype) {
+    public function process_request($requestmethod, $requestparameters, $payload = null, $responsetype = null) {
         global $CFG, $SITE, $THEME, $PAGE;
 
         switch ($requestmethod) {
             case 'POST':
-                $this->update_api_key($requestdata);
+                $this->update_api_key($payload);
                 break;
 
             case 'GET':
@@ -52,12 +52,12 @@ class api_key_status extends endpoint implements endpoint_interface {
         }
     }
 
-    private function update_api_key($requestdata) {
+    private function update_api_key($payload) {
         $data = [];
         $now = time();
 
-        if (isset($requestdata['key_expiration_date'])) {
-            $timestamp = $requestdata['key_expiration_date'];
+        if (isset($payload->key_expiration_date)) {
+            $timestamp = $payload->key_expiration_date;
             set_config('key_expiration_date', $timestamp, 'local_moopanel');
             $this->responsecode = 201;
             $this->responsemsg = 'updated';
