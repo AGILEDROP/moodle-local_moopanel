@@ -17,7 +17,7 @@
 /**
  * Endpoint for manage moodle plugins.
  *
- * File         api_key_status.php
+ * File         plugins.php
  * Encoding     UTF-8
  *
  * @package     local_moopanel
@@ -74,7 +74,9 @@ class plugins extends endpoint implements endpoint_interface {
                 $isstandard = $plugin->is_standard();
                 $hasupdates = (bool)$plugin->available_updates();
                 $plugininfo = [
-                        'plugin' => $plugin->displayname,
+                        'plugin' => $plugin->name,
+                        'display_name' => $plugin->displayname,
+                        'component' => $plugin->component,
                         'version' => $plugin->versiondb,
                         'enabled' => (bool)$plugin->is_enabled(),
                         'is_standard' => $isstandard,
