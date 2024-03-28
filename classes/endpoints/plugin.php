@@ -115,7 +115,7 @@ class plugin extends endpoint implements endpoint_interface {
 
 
     private function post_request($data) {
-        $this->responsecode = 400;
+        $this->responsecode = 501;
         $this->responsemsg = 'Not implemented yet.';
     }
 }

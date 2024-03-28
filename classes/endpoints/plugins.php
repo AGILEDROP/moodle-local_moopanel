@@ -81,6 +81,8 @@ class plugins extends endpoint implements endpoint_interface {
                         'enabled' => (bool)$plugin->is_enabled(),
                         'is_standard' => $isstandard,
                         'available_updates' => $hasupdates,
+                        'settings_section' => $plugin->get_settings_section_name(),
+                        'directory' => $plugin->get_dir(),
                 ];
 
                 if (!$contribonly && !$updatesonly) {
@@ -108,7 +110,7 @@ class plugins extends endpoint implements endpoint_interface {
     }
 
     private function post_request($data) {
-        $this->responsecode = 400;
+        $this->responsecode = 501;
         $this->responsemsg = 'Not implemented yet.';
     }
 }
