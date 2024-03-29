@@ -64,6 +64,7 @@ class users extends endpoint implements endpoint_interface {
     }
 
     private function get_users($parameters, $count){
+
         $count = !$count;
 
         $search = (isset($parameters->search)) ? $parameters->search : '';
@@ -112,9 +113,28 @@ class users extends endpoint implements endpoint_interface {
     private function get_online_users() {
         global $DB;
 
+        $now = time();
+        $fromtime = $now - 300; // Last five minutes.
+        $sql = "SELECT username, firstname, lastname FROM {user} WHERE lastaccess > :fromtime";
+        $params = [
+                'fromtime' => $fromtime,
+        ];
+
+        $users = $DB->get_records_sql($sql, $params);
+
+        $data = [];
+
+        if (!empty($users)) {
+            foreach ($users as $user) {
+                $data[] = $user;
+            }
+        }
+
+
+
         return [
-                'number_of_users' => 123,
-            'users' => [],
+                'number_of_users' => count($users),
+            'users' => $data,
         ];
     }
 
