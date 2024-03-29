@@ -11,6 +11,9 @@ This plugin provide an API to enable communication between Moodle and MooPanel A
 To enable communication  with MooPanel, first go in Moopanel App and folow steps to add new instance (you must copy url of Moodle).
 Moopanel App provide you an API-key which you must paste into plugin config.
 
+## Authorisation
+Moopanel API use API-key authorisation type. Please add "X-API-KEY" key and its value to header.
+
 ## Available endpoints
 All endpoints url starts with Moodle root url + "/local/moopanel/index.php".
 
@@ -73,7 +76,7 @@ All endpoints url starts with Moodle root url + "/local/moopanel/index.php".
   - string "fields" A comma separated list of fields to be returned from the chosen table.
 
 
-- Available Urlparameters:
+- Available URL parameters:
   - "/count" - return number of users (based on filers from body) 
   - "/online" - return online users 
 
