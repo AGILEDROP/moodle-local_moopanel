@@ -58,8 +58,8 @@ class user extends endpoint implements endpoint_interface {
 
     private function get_user($parameters){
 
-        if(isset($parameters->email)) {
-            $user = core_user::get_user_by_email($parameters->email);
+        if(isset($parameters->upn)) {
+            $user = core_user::get_user_by_email($parameters->upn);
         } elseif (isset($parameters->username)) {
             $user = core_user::get_user_by_username($parameters->username);
         } elseif (isset($parameters->id)) {
@@ -69,7 +69,7 @@ class user extends endpoint implements endpoint_interface {
             $this->responsecode = 400;
             $this->responsemsg = 'OK';
             return [
-                    'error' => 'Specify id, username or email to get user.',
+                    'error' => 'Specify id, username or upn (email) to get user.',
             ];
         }
 
