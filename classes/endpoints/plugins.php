@@ -75,6 +75,7 @@ class plugins extends endpoint implements endpoint_interface {
                 $hasupdates = (bool)$plugin->available_updates();
                 $plugininfo = [
                         'plugin' => $plugin->name,
+                        'plugintype' => $key,
                         'display_name' => $plugin->displayname,
                         'component' => $plugin->component,
                         'version' => $plugin->versiondb,
@@ -87,21 +88,21 @@ class plugins extends endpoint implements endpoint_interface {
 
                 if (!$contribonly && !$updatesonly) {
                     // All plugins.
-                    $data['plugin_types'][$key]['plugins'][] = $plugininfo;
+                    $data['plugins'][] = $plugininfo;
                 } elseif (!$contribonly && $updatesonly) {
                     // All plugins updates.
                     if ($hasupdates) {
-                        $data['plugin_types'][$key]['plugins'][] = $plugininfo;
+                        $data['plugins'][] = $plugininfo;
                     }
                 } elseif ($contribonly && !$updatesonly) {
                     // All contrib plugins.
                     if (!$isstandard) {
-                        $data['plugin_types'][$key]['plugins'][] = $plugininfo;
+                        $data['plugins'][] = $plugininfo;
                     }
                 } else {
                     // Only contrib plugins which has updates.
                     if (!$isstandard && $hasupdates) {
-                        $data['plugin_types'][$key]['plugins'][] = $plugininfo;
+                        $data['plugins'][] = $plugininfo;
                     }
                 }
             }

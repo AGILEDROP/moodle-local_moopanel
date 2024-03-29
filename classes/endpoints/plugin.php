@@ -93,11 +93,13 @@ class plugin extends endpoint implements endpoint_interface {
             unset($data->pluginman);
         }
 
-        $arr = convert_to_array($data);
+        $response = [
+                'plugininfo' => convert_to_array($data),
+        ];
 
         $this->responsecode = 200;
         $this->responsemsg = 'OK';
-        $this->responsebody = (object)$arr;
+        $this->responsebody = (object)$response;
 
         return $data;
     }
@@ -106,9 +108,12 @@ class plugin extends endpoint implements endpoint_interface {
 
         $config = get_config($plugin);
 
+        $response = [
+                'pluginconfig' => $config,
+        ];
         $this->responsecode = 200;
         $this->responsemsg = 'OK';
-        $this->responsebody = (object)$config;
+        $this->responsebody = (object)$response;
 
         return $config;
     }
