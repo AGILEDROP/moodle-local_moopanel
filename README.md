@@ -17,13 +17,15 @@ Moopanel API use API-key authorisation type. Please add "X-API-KEY" key and its 
 ## Available endpoints
 All endpoints url starts with Moodle root url + "/local/moopanel/index.php".
 
-### "index.php" or "index.php/test_connection" [GET]
+### "index.php" or "index.php/test_connection"
+#### GET
 - return response with basic information about Moodle
 
-### "index.php/dashboard" [GET]
+### "index.php/dashboard"
+#### GET
 - return response with some additional information about Moodle
 
-### "index.php/api_key_status" [GET] [POST]
+### "index.php/api_key_status"
 #### GET
 - return information about API key (currently only 'key_expiration_date')
 #### POST
@@ -44,7 +46,7 @@ All endpoints url starts with Moodle root url + "/local/moopanel/index.php".
         }
 }
 ```
-### "index.php/users" [GET] [POST]
+### "index.php/users"
 #### GET
 - return list of Moodle users
 - filters can be provided in request body.
@@ -83,7 +85,8 @@ All endpoints url starts with Moodle root url + "/local/moopanel/index.php".
 #### POST
 Not implemented yet.
 
-### "index.php/user" [GET] [POST]
+### "index.php/user"
+#### GET
 - return details for selected user
 - filter can be provided in request body.
 - please use just one of filters provided in example (id or username or email)
@@ -100,7 +103,7 @@ Not implemented yet.
 #### POST
 Not implemented yet.
 
-### "index.php/plugins" [GET] [POST]
+### "index.php/plugins"
 #### GET
 - return list of all moodle plugins
 - filters can be provided in url parmeters.
@@ -113,7 +116,7 @@ Not implemented yet.
 #### POST
 Not implemented yet.
 
-### "index.php/plugin" [GET] [POST]
+### "index.php/plugin"
 #### GET
 - return details for selected plugin
 - please use component name (frankenstyle) of selected plugin (see example)
