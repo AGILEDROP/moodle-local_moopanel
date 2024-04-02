@@ -114,7 +114,7 @@ class users extends endpoint implements endpoint_interface {
         global $DB;
 
         $now = time();
-        $fromtime = $now - 300; // Last five minutes.
+        $fromtime = $now - 150; // Last 150 seconds.
         $sql = "SELECT username, firstname, lastname FROM {user} WHERE lastaccess > :fromtime";
         $params = [
                 'fromtime' => $fromtime,

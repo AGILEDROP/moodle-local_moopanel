@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version information for local_moopanel plugin.
+ * Endpoint of Moopanel API.
  *
- * File         version.php
+ * File         index.php
  * Encoding     UTF-8
  *
  * @package     local_moopanel
@@ -27,11 +27,23 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+require('../../config.php');
+require('classes/moopanel_api.php');
+require('classes/error_handler.php');
 
-$plugin = new stdClass();
-$plugin->version     = 2024040203;
-$plugin->requires    = 2022041900;      // YYYYMMDDHH (This is the release version for Moodle 4.0).
-$plugin->component   = 'local_moopanel';
-$plugin->release     = '1.0.0';
-$plugin->dependencies = [];
+
+set_exception_handler(\local_moopanel\error_handler::throw_error());
+
+$server = new \local_moopanel\moopanel_api();
+
+$apikey = false;
+$ip = false;
+
+if (isset($_SERVER['HTTP_X_API_KEY'])) {
+    $apikey = $_SERVER['HTTP_X_API_KEY'];
+}
+
+$ip = $_SERVER['REMOTE_ADDR'];
+
+$server->run($apikey, $ip);
+die();

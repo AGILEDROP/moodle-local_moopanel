@@ -84,8 +84,8 @@ Available options:
 
 
 Available URL parameters:
-  - ```/count``` - return number of users (based on filers from body) 
-  - ```/online``` - return online users 
+  - ```/count``` - return number of users (based on filters from request body) 
+  - ```/online``` - return online users (check for access for last 5 minutes)
 
 #### ```[POST request]```
 Not implemented yet.
@@ -126,9 +126,9 @@ Not implemented yet.
 
 ### Endpoint ```/plugin```
 #### ```[GET request]```
-- return details for selected plugin
-- please use component name (frankenstyle) of selected plugin (see example)
-    - request body example
+Return details for selected plugin
+Please use component name (frankenstyle) of selected plugin (see example)
+ - request body example
 ```json
 {
     "data": {
@@ -138,6 +138,16 @@ Not implemented yet.
 ```
 - Available URL parameters:
   - ```/config``` - return list of current config for selected plugin.
+
+#### ```[POST request]```
+Not implemented yet.
+
+### Endpoint ```/moodle_core```
+#### ```[GET request]```
+Return:
+ - details about current moodle version.
+ - check for available updates for moodle core
+ - update logs
 
 #### ```[POST request]```
 Not implemented yet.

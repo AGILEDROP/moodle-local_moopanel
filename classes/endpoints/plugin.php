@@ -85,16 +85,37 @@ class plugin extends endpoint implements endpoint_interface {
     }
 
     private function get_plugin($plugin = null) {
+        global $DB;
 
         $plugin_man = \core_plugin_manager::instance();
         $data = $plugin_man->get_plugin_info($plugin);
+
+        $updateschecker = \core\update\checker::instance();
+        $lastcheck = $updateschecker->get_last_timefetched();
+        $updates = $updateschecker->get_update_info($plugin);
+
+        $updatelogs = $DB->get_records('upgrade_log', ['plugin' => $plugin], 'id DESC');
+
+        $logs = [];
+
+        foreach ($updatelogs as $updatelog) {
+
+            $info = $updatelog->info;
+            if ($info == 'Plugin upgraded' || $info == 'Plugin installed')
+                $logs[] = (array)$updatelog;
+        }
+
 
         if (isset($data->pluginman)) {
             unset($data->pluginman);
         }
 
+        // $updates = $plugin_man->available_updates();
         $response = [
                 'plugininfo' => convert_to_array($data),
+                'last_check_for_updates' => $lastcheck,
+                'updates_available' => $updates,
+                'updates_log' => $logs,
         ];
 
         $this->responsecode = 200;
