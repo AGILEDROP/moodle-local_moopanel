@@ -29,7 +29,7 @@
 
 namespace local_moopanel\endpoints;
 
-use core\update_checker_test;
+use core\update\checker;
 use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
 
@@ -61,7 +61,7 @@ class moodle_core extends endpoint implements endpoint_interface {
     private function get_moodle_core_info() {
         global $CFG, $DB;
 
-        $updateschecker = \core\update\checker::instance();
+        $updateschecker = checker::instance();
         $lastcheck = $updateschecker->get_last_timefetched();
         $updates = $updateschecker->get_update_info('core');
         $updatesstable = [];
@@ -81,8 +81,14 @@ class moodle_core extends endpoint implements endpoint_interface {
         foreach ($updatelogs as $updatelog) {
 
             $info = $updatelog->info;
-            if ($info == 'Core upgraded' || $info == 'Core installed')
-            $logs[] = (array)$updatelog;
+            $allowedinfo = [
+                    'Core upgraded',
+                    'Core installed',
+            ];
+
+            if (in_array($info, $allowedinfo)) {
+                $logs[] = (array) $updatelog;
+            }
         }
 
         $data = [

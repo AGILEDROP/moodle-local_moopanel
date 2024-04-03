@@ -63,7 +63,7 @@ class users extends endpoint implements endpoint_interface {
         }
     }
 
-    private function get_users($parameters, $count){
+    private function get_users($parameters, $count) {
 
         $count = !$count;
 
@@ -129,8 +129,6 @@ class users extends endpoint implements endpoint_interface {
                 $data[] = $user;
             }
         }
-
-
 
         return [
                 'number_of_users' => count($users),

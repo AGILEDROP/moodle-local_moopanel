@@ -49,23 +49,21 @@ class user extends endpoint implements endpoint_interface {
             case 'GET':
                 $user = $this->get_user($payload);
 
-
                 $this->responsebody = (object)$user;
 
                 break;
         }
     }
 
-    private function get_user($parameters){
+    private function get_user($parameters) {
 
-        if(isset($parameters->upn)) {
+        if (isset($parameters->upn)) {
             $user = core_user::get_user_by_email($parameters->upn);
-        } elseif (isset($parameters->username)) {
+        } else if (isset($parameters->username)) {
             $user = core_user::get_user_by_username($parameters->username);
-        } elseif (isset($parameters->id)) {
+        } else if (isset($parameters->id)) {
             $user = core_user::get_user($parameters->id);
         } else {
-
             $this->responsecode = 400;
             $this->responsemsg = 'OK';
             return [
