@@ -29,6 +29,8 @@
 
 namespace local_moopanel\endpoints;
 
+use core\update\checker;
+use core_plugin_manager;
 use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
 
@@ -55,10 +57,9 @@ class plugin extends endpoint implements endpoint_interface {
                 break;
 
             case 'GET':
-                if(in_array('config', $requestparameters)) {
+                if (in_array('config', $requestparameters)) {
                     $plugindata = $this->get_plugin_config($plugin);
-                }
-                else {
+                } else {
                     $plugindata = $this->get_plugin($plugin);
                 }
                 break;
@@ -72,8 +73,8 @@ class plugin extends endpoint implements endpoint_interface {
             return false;
         }
 
-        $plugin_man = \core_plugin_manager::instance();
-        $data = $plugin_man->get_plugin_info($plugin);
+        $pluginman = core_plugin_manager::instance();
+        $data = $pluginman->get_plugin_info($plugin);
 
         if (!$data) {
             $this->responsecode = 400;
@@ -87,10 +88,10 @@ class plugin extends endpoint implements endpoint_interface {
     private function get_plugin($plugin = null) {
         global $DB;
 
-        $plugin_man = \core_plugin_manager::instance();
-        $data = $plugin_man->get_plugin_info($plugin);
+        $pluginman = core_plugin_manager::instance();
+        $data = $pluginman->get_plugin_info($plugin);
 
-        $updateschecker = \core\update\checker::instance();
+        $updateschecker = checker::instance();
         $lastcheck = $updateschecker->get_last_timefetched();
         $updates = $updateschecker->get_update_info($plugin);
 
@@ -101,16 +102,21 @@ class plugin extends endpoint implements endpoint_interface {
         foreach ($updatelogs as $updatelog) {
 
             $info = $updatelog->info;
-            if ($info == 'Plugin upgraded' || $info == 'Plugin installed')
-                $logs[] = (array)$updatelog;
-        }
+            $allowedinfo = [
+                    'Plugin upgraded',
+                    'Plugin installed',
+                    'Plugin uninstalled',
+            ];
 
+            if (in_array($info, $allowedinfo)) {
+                $logs[] = (array)$updatelog;
+            }
+        }
 
         if (isset($data->pluginman)) {
             unset($data->pluginman);
         }
 
-        // $updates = $plugin_man->available_updates();
         $response = [
                 'plugininfo' => convert_to_array($data),
                 'last_check_for_updates' => $lastcheck,

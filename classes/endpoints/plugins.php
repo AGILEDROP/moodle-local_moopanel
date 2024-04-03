@@ -29,6 +29,7 @@
 
 namespace local_moopanel\endpoints;
 
+use core_plugin_manager;
 use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
 
@@ -61,9 +62,9 @@ class plugins extends endpoint implements endpoint_interface {
 
 
     private function get_plugins($contribonly = false, $updatesonly = false) {
-        $plugin_man = \core_plugin_manager::instance();
+        $pluginman = core_plugin_manager::instance();
         $data = [];
-        $plugintypes = $plugin_man->get_plugins();
+        $plugintypes = $pluginman->get_plugins();
 
         foreach ($plugintypes as $key => $plugintype) {
 
@@ -89,12 +90,12 @@ class plugins extends endpoint implements endpoint_interface {
                 if (!$contribonly && !$updatesonly) {
                     // All plugins.
                     $data['plugins'][] = $plugininfo;
-                } elseif (!$contribonly && $updatesonly) {
+                } else if (!$contribonly && $updatesonly) {
                     // All plugins updates.
                     if ($hasupdates) {
                         $data['plugins'][] = $plugininfo;
                     }
-                } elseif ($contribonly && !$updatesonly) {
+                } else if ($contribonly && !$updatesonly) {
                     // All contrib plugins.
                     if (!$isstandard) {
                         $data['plugins'][] = $plugininfo;
