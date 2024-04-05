@@ -30,6 +30,7 @@
 namespace local_moopanel\endpoints;
 
 use core\update\checker;
+use core_user;
 use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
 
@@ -87,6 +88,18 @@ class moodle_core extends endpoint implements endpoint_interface {
             ];
 
             if (in_array($info, $allowedinfo)) {
+                $username = false;
+                $email = false;
+
+                if ($updatelog->userid > 0) {
+                    $user = core_user::get_user($updatelog->userid);
+                    if ($user) {
+                        $username = $user->username;
+                        $email = $user->email;
+                    }
+                }
+                $updatelog->username = ($username) ? $username : '';
+                $updatelog->email = ($email) ? $email : '';
                 $logs[] = (array) $updatelog;
             }
         }

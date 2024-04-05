@@ -44,13 +44,16 @@ class test_connection extends endpoint implements endpoint_interface {
         $PAGE->set_context(\context_system::instance());
         $renderer = $PAGE->get_renderer('core');
 
+        $logourl = $renderer->get_logo_url(300, 300);
+        $logo = ($logourl) ? $logourl->raw_out() : '';
+
         $data = [
                 'status' => 'OK',
                 'url' => $CFG->wwwroot,
-                'site_fullname' => $SITE->fullname,
-                'logo' => $renderer->get_logo_url(300, 300)->raw_out(),
-                'theme' => $CFG->theme,
-                'moodle_version' => $CFG->release,
+                'site_fullname' => $SITE->fullname ?? '',
+                'logo' => $logo,
+                'theme' => $CFG->theme ?? '',
+                'moodle_version' => $CFG->release ?? '',
         ];
 
         $this->responsecode = 200;
