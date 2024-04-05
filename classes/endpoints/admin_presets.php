@@ -84,7 +84,10 @@ class admin_presets extends endpoint implements endpoint_interface {
 
         $presetrecord = $DB->get_record('adminpresets', ['name' => 'Moopanel']);
 
-        // $preset = $this->admin_preset_download($presetrecord->id);
+        ob_clean();
+        ob_start();
+
+        $preset = $this->admin_preset_download($presetrecord->id);
 
         return [
                 'preset_id' => $presetrecord->id,
@@ -127,10 +130,22 @@ class admin_presets extends endpoint implements endpoint_interface {
     private function admin_preset_download($presetid) {
         global $USER, $DB, $PAGE;
 
-        $USER = $DB->get_record('user', ['id' => 2]);
+        $user = $DB->get_record('user', ['id' => 2]);
+        \core\session\manager::login_user($user);
+
+        $a = 2;
         $PAGE->set_context(\context_system::instance());
 
         $manager = new manager();
+
+        // $exporter = new export();
+        // $exporter->download_xml();
+
+        $xmloutput = new memory_xml_output();
+        $xmlwriter = new xml_writer($xmloutput);
+        $xmlwriter->start();
+
+        $a = 2;
 
         $preset = $manager->download_preset($presetid);
 

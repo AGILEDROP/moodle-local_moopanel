@@ -44,14 +44,20 @@ class dashboard extends endpoint implements endpoint_interface {
         $PAGE->set_context(\context_system::instance());
         $renderer = $PAGE->get_renderer('core');
 
+        $logourl = $renderer->get_logo_url(300, 300);
+        $compactlogourl = $renderer->get_compact_logo_url(300, 300);
+
+        $logo = ($logourl) ? $logourl->raw_out() : '';
+        $compactlogo = ($compactlogourl) ? $compactlogourl->raw_out() : '';
+
         $data = [
-            'url' => $CFG->wwwroot,
-            'site_fullname' => $SITE->fullname,
-            'site_shortname' => $SITE->shortname,
-            'logo' => $renderer->get_logo_url(300, 300)->raw_out(),
-            'logocompact' => $renderer->get_compact_logo_url(300, 300)->raw_out(),
-            'theme' => $CFG->theme,
-            'moodle_version' => $CFG->release,
+            'url' => $CFG->wwwroot ?? '',
+            'site_fullname' => $SITE->fullname ?? '',
+            'site_shortname' => $SITE->shortname ?? '',
+            'logo' => $logo,
+            'logocompact' => $compactlogo,
+            'theme' => $CFG->theme ?? '',
+            'moodle_version' => $CFG->release ?? '',
         ];
 
         $this->responsecode = 200;
