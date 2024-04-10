@@ -30,7 +30,7 @@
 use local_moopanel\api;
 
 require('../../config.php');
-require('classes/moopanel_api.php');
+require('classes/api.php');
 require('classes/error_handler.php');
 
 
