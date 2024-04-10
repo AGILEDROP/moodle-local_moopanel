@@ -37,130 +37,109 @@ use local_moopanel\endpoint_interface;
 
 class plugin extends endpoint implements endpoint_interface {
 
+    private $plugin;
+
     public function define_allowed_request_methods() {
         return ['GET', 'POST'];
     }
 
-    public function process_request($requestmethod, $requestparameters, $payload = null, $responsetype = null) {
+    public function execute_request() {
 
-        $plugin = null;
-        if (isset($payload->plugin)) {
-            $plugin = $payload->plugin;
-        }
+
+        // Check if plugin is provided.
+        $this->plugin_provided();
+
         // Check if plugin exist.
-        if (!$this->plugin_exist($plugin)) {
-            return;
-        }
+        $this->plugin_exist();
 
-        switch ($requestmethod) {
+        switch ($this->request->method) {
             case 'POST':
-                $this->post_request($payload);
+                $this->post_request();
                 break;
 
             case 'GET':
-                if (in_array('config', $requestparameters)) {
-                    $plugindata = $this->get_plugin_config($plugin);
+                if (in_array('config', $this->request->parameters)) {
+                    $this->get_plugin_config();
                 } else {
-                    $plugindata = $this->get_plugin($plugin);
+                    $this->get_plugin_info();
                 }
                 break;
         }
+
     }
 
-    private function plugin_exist($plugin) {
-        if (!$plugin) {
-            $this->responsecode = 400;
-            $this->responsemsg = 'Plugin not specified.';
-            return false;
+    private function plugin_provided() {
+        if (isset($this->request->payload->plugin)) {
+            $this->plugin = $this->request->payload->plugin;
+        } else {
+            $this->response->send_error(STATUS_400, 'Plugin not specified.');
         }
+    }
+
+    private function plugin_exist() {
 
         $pluginman = core_plugin_manager::instance();
-        $data = $pluginman->get_plugin_info($plugin);
+        $data = $pluginman->get_plugin_info($this->plugin);
 
         if (!$data) {
-            $this->responsecode = 400;
-            $this->responsemsg = 'Plugin not exist.';
-            return false;
+            $this->response->send_error(STATUS_400, 'Plugin not exist.');
         }
-
-        return true;
     }
 
-    private function get_plugin($plugin = null) {
+    private function get_plugin_info() {
         global $DB;
 
         $pluginman = core_plugin_manager::instance();
-        $data = $pluginman->get_plugin_info($plugin);
+        $data = $pluginman->get_plugin_info($this->plugin);
 
         $updateschecker = checker::instance();
         $lastcheck = $updateschecker->get_last_timefetched();
-        $updates = $updateschecker->get_update_info($plugin);
+        $updates = $updateschecker->get_update_info($this->plugin);
 
-        $updatelogs = $DB->get_records('upgrade_log', ['plugin' => $plugin], 'id DESC');
+        $updatelogs = $DB->get_records('upgrade_log', ['plugin' => $this->plugin], 'id DESC');
 
         $logs = [];
 
         foreach ($updatelogs as $updatelog) {
+            $username = null;
+            $email = null;
+            $updatelog->userid = (int)$updatelog->userid;
 
-            $info = $updatelog->info;
-            $allowedinfo = [
-                    'Plugin upgraded',
-                    'Plugin installed',
-                    'Plugin uninstalled',
-            ];
-
-            if (in_array($info, $allowedinfo)) {
-                $username = false;
-                $email = false;
-
-                if ($updatelog->userid > 0) {
-                    $user = core_user::get_user($updatelog->userid);
-                    if ($user) {
-                        $username = $user->username;
-                        $email = $user->email;
-                    }
+            if ($updatelog->userid > 0) {
+                $user = core_user::get_user($updatelog->userid);
+                if ($user) {
+                    $username = $user->username;
+                    $email = $user->email;
                 }
-                $updatelog->username = ($username) ? $username : '';
-                $updatelog->email = ($email) ? $email : '';
-                $logs[] = (array) $updatelog;
+            } else {
+                $updatelog->userid = null;
             }
+            $updatelog->id = (int)$updatelog->id;
+            $updatelog->type = (int)$updatelog->type;
+            $updatelog->timemodified = (int)$updatelog->timemodified;
+            $updatelog->username = $username;
+            $updatelog->email = $email;
+            $logs[] = (array) $updatelog;
         }
 
         if (isset($data->pluginman)) {
             unset($data->pluginman);
         }
 
-        $response = [
-                'plugininfo' => convert_to_array($data),
-                'last_check_for_updates' => $lastcheck,
-                'updates_available' => $updates,
-                'updates_log' => $logs,
-        ];
-
-        $this->responsecode = 200;
-        $this->responsemsg = 'OK';
-        $this->responsebody = (object)$response;
-
-        return $data;
+        $this->response->add_body_key('plugininfo', convert_to_array($data));
+        $this->response->add_body_key('last_check_for_updates', $lastcheck);
+        $this->response->add_body_key('updates_available', $updates);
+        $this->response->add_body_key('updates_log', $logs);
     }
 
     private function get_plugin_config($plugin = null) {
 
         $config = get_config($plugin);
 
-        $response = [
-                'pluginconfig' => $config,
-        ];
-        $this->responsecode = 200;
-        $this->responsemsg = 'OK';
-        $this->responsebody = (object)$response;
-
-        return $config;
+        $this->response->add_body_key('pluginconfig', $config);
     }
 
-
-    private function post_request($data) {
-        $this->responsecode = 501;
-        $this->responsemsg = 'Not implemented yet.';
+    private function post_request() {
+        $this->response->send_error(STATUS_501, 'Not implemented yet.');
     }
 }

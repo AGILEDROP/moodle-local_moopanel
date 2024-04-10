@@ -38,58 +38,52 @@ class users extends endpoint implements endpoint_interface {
         return ['GET', 'POST'];
     }
 
-    public function process_request($requestmethod, $requestparameters, $payload = null, $responsetype = null) {
-
-        switch ($requestmethod) {
+    public function execute_request() {
+        switch ($this->request->method) {
             case 'POST':
-                $this->post_request($payload);
+                $this->post_request();
                 break;
 
             case 'GET':
-                $count = in_array('count', $requestparameters);
-                $online = in_array('online', $requestparameters);
+                $count = in_array('count', $this->request->parameters);
+                $online = in_array('online', $this->request->parameters);
 
                 if ($online) {
-                    $users = $this->get_online_users();
+                    $this->get_online_users();
                 } else {
-                    $users = $this->get_users($payload, $count);
+                    $this->get_users($count);
                 }
-
-                $this->responsecode = 200;
-                $this->responsemsg = 'OK';
-                $this->responsebody = (object)$users;
-
                 break;
         }
     }
 
-    private function get_users($parameters, $count) {
+    private function get_users($count) {
+
+        $payload = $this->request->payload;
 
         $count = !$count;
 
-        $search = (isset($parameters->search)) ? $parameters->search : '';
-        $confirmed = (isset($parameters->confirmed)) ? $parameters->confirmed : false;
-        $ignoreids = (isset($parameters->ignoreids)) ? $parameters->ignoreids : null;
-        $sort = (isset($parameters->sort)) ? $parameters->sort : 'firstname ASC';
-        $firstinitial = (isset($parameters->firstinitial)) ? $parameters->firstinitial : '';
-        $lastinitial = (isset($parameters->lastinitial)) ? $parameters->lastinitial : '';
-        $page = (isset($parameters->page)) ? $parameters->page : '';
-        $limit = (isset($parameters->limit)) ? $parameters->limit : 9999999999;
-        $fields = (isset($parameters->fields)) ? $parameters->fields : '*';
+        $search = (isset($payload->search)) ? $payload->search : '';
+        $confirmed = (isset($payload->confirmed)) ? $payload->confirmed : false;
+        $ignoreids = (isset($payload->ignoreids)) ? $payload->ignoreids : null;
+        $sort = (isset($payload->sort)) ? $payload->sort : 'firstname ASC';
+        $firstinitial = (isset($payload->firstinitial)) ? $payload->firstinitial : '';
+        $lastinitial = (isset($payload->lastinitial)) ? $payload->lastinitial : '';
+        $page = (isset($payload->page)) ? $payload->page : '';
+        $limit = (isset($payload->limit)) ? $payload->limit : 9999999999;
+        $fields = (isset($payload->fields)) ? $payload->fields : '*';
 
         $data = [];
         $users = get_users($count, $search, $confirmed, $ignoreids, $sort, $firstinitial, $lastinitial, $page, $limit, $fields);
 
         if (is_numeric($users)) {
-            return [
-                    'number_of_users' => $users,
-            ];
+            $this->response->add_body_key('number_of_users', $users);
+            return;
         }
 
         if (empty($users)) {
-            return [
-                    'users' => 'No users for given parameters.',
-            ];
+            $this->response->add_body_key('users', null);
+            return;
         }
 
         if ($fields == '*') {
@@ -107,7 +101,7 @@ class users extends endpoint implements endpoint_interface {
             }
         }
 
-        return $data;
+        $this->response->add_body_key('users', $data['users']);
     }
 
     private function get_online_users() {
@@ -122,7 +116,9 @@ class users extends endpoint implements endpoint_interface {
 
         $users = $DB->get_records_sql($sql, $params);
 
-        $data = [];
+        $this->response->add_body_key('number_of_users', count($users));
+
+        $data = null;
 
         if (!empty($users)) {
             foreach ($users as $user) {
@@ -130,14 +126,13 @@ class users extends endpoint implements endpoint_interface {
             }
         }
 
-        return [
-                'number_of_users' => count($users),
-            'users' => $data,
-        ];
+        $this->response->add_body_key('users', $data);
+
+
+
     }
 
-    private function post_request($data) {
-        $this->responsecode = 501;
-        $this->responsemsg = 'Not implemented yet.';
+    private function post_request() {
+        $this->response->send_error(STATUS_501, 'Not Implemented yet.');
     }
 }

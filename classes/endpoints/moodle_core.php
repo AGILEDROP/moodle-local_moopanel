@@ -40,24 +40,19 @@ class moodle_core extends endpoint implements endpoint_interface {
         return ['GET', 'POST'];
     }
 
-    public function process_request($requestmethod, $requestparameters, $payload = null, $responsetype = null) {
+    public function execute_request() {
 
-        switch ($requestmethod) {
+        switch ($this->request->method) {
             case 'POST':
-                $this->post_request($payload);
+                $this->post_request();
                 break;
 
             case 'GET':
-
-                $data = $this->get_moodle_core_info();
-
-                $this->responsecode = 200;
-                $this->responsemsg = 'OK';
-                $this->responsebody = (object)$data;
-
+                $this->get_moodle_core_info();
                 break;
         }
     }
+
 
     private function get_moodle_core_info() {
         global $CFG, $DB;
@@ -65,13 +60,6 @@ class moodle_core extends endpoint implements endpoint_interface {
         $updateschecker = checker::instance();
         $lastcheck = $updateschecker->get_last_timefetched();
         $updates = $updateschecker->get_update_info('core');
-        $updatesstable = [];
-        foreach ($updates as $update) {
-            // Only stable updates.
-            if ($update->maturity === 200) {
-                $updatesstable[] = $update;
-            }
-        }
 
         $conditions = [
                 'plugin' => 'core',
@@ -81,43 +69,35 @@ class moodle_core extends endpoint implements endpoint_interface {
 
         foreach ($updatelogs as $updatelog) {
 
-            $info = $updatelog->info;
-            $allowedinfo = [
-                    'Core upgraded',
-                    'Core installed',
-            ];
+            $username = null;
+            $email = null;
+            $updatelog->userid = (int)$updatelog->userid;
 
-            if (in_array($info, $allowedinfo)) {
-                $username = false;
-                $email = false;
-
-                if ($updatelog->userid > 0) {
-                    $user = core_user::get_user($updatelog->userid);
-                    if ($user) {
-                        $username = $user->username;
-                        $email = $user->email;
-                    }
+            if ($updatelog->userid > 0) {
+                $user = core_user::get_user($updatelog->userid);
+                if ($user) {
+                    $username = $user->username;
+                    $email = $user->email;
                 }
-                $updatelog->username = ($username) ? $username : '';
-                $updatelog->email = ($email) ? $email : '';
-                $logs[] = (array) $updatelog;
+            } else {
+                $updatelog->userid = null;
             }
+            $updatelog->id = (int)$updatelog->id;
+            $updatelog->type = (int)$updatelog->type;
+            $updatelog->timemodified = (int)$updatelog->timemodified;
+            $updatelog->username = $username;
+            $updatelog->email = $email;
+            $logs[] = (array) $updatelog;
         }
 
-        $data = [
-            'status' => 'OK',
-            'current_version' => $CFG->release,
-            'last_check_for_updates' => $lastcheck,
-            'updates_available' => $updatesstable,
-            'updates_log' => $logs,
-        ];
-
-        return $data;
+        $this->response->add_body_key('current_version', $CFG->release);
+        $this->response->add_body_key('last_check_for_updates', $lastcheck);
+        $this->response->add_body_key('update_available', $updates);
+        $this->response->add_body_key('update_logs', $logs);
     }
 
 
-    private function post_request($data) {
-        $this->responsecode = 501;
-        $this->responsemsg = 'Not implemented yet.';
+    private function post_request() {
+        $this->response->send_error(STATUS_501, 'Method not implemented yet.');
     }
 }

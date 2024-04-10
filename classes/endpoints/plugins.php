@@ -29,7 +29,9 @@
 
 namespace local_moopanel\endpoints;
 
+use core\update\checker;
 use core_plugin_manager;
+use core_user;
 use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
 
@@ -39,29 +41,24 @@ class plugins extends endpoint implements endpoint_interface {
         return ['GET', 'POST'];
     }
 
-    public function process_request($requestmethod, $requestparameters, $payload = null, $responsetype = null) {
-
-        switch ($requestmethod) {
+    public function execute_request() {
+        switch ($this->request->method) {
             case 'POST':
-                $this->post_request($payload);
+                $this->post_request();
                 break;
 
             case 'GET':
-                $contrib = in_array('contrib', $requestparameters);
-                $updates = in_array('updates', $requestparameters);
-
-                $plugins = $this->get_plugins($contrib, $updates);
-
-                $this->responsecode = 200;
-                $this->responsemsg = 'OK';
-                $this->responsebody = (object)$plugins;
-
+                $this->get_plugins();
                 break;
         }
     }
 
 
-    private function get_plugins($contribonly = false, $updatesonly = false) {
+    private function get_plugins() {
+        global $DB;
+
+        $displayupdates = in_array('updates', $this->request->parameters);
+
         $pluginman = core_plugin_manager::instance();
         $data = [];
         $plugintypes = $pluginman->get_plugins();
@@ -82,37 +79,75 @@ class plugins extends endpoint implements endpoint_interface {
                         'version' => $plugin->versiondb,
                         'enabled' => (bool)$plugin->is_enabled(),
                         'is_standard' => $isstandard,
-                        'available_updates' => $hasupdates,
+                        'has_updates' => ($hasupdates) ? $hasupdates : null,
                         'settings_section' => $plugin->get_settings_section_name(),
                         'directory' => $plugin->get_dir(),
                 ];
 
-                if (!$contribonly && !$updatesonly) {
-                    // All plugins.
-                    $data['plugins'][] = $plugininfo;
-                } else if (!$contribonly && $updatesonly) {
-                    // All plugins updates.
-                    if ($hasupdates) {
-                        $data['plugins'][] = $plugininfo;
+
+                if ($displayupdates) {
+                    $availableupdates = null;
+                    $updateschecker = checker::instance();
+                    $pluginupdates = $updateschecker->get_update_info($plugin->component);
+                    if ($pluginupdates) {
+                        $updates = [];
+                        foreach ($pluginupdates as $pluginupdate) {
+                            $updates[] = $pluginupdate;
+                        }
+                        $availableupdates = $updates;
                     }
-                } else if ($contribonly && !$updatesonly) {
-                    // All contrib plugins.
-                    if (!$isstandard) {
-                        $data['plugins'][] = $plugininfo;
+                    $plugininfo['available_updates'] = $availableupdates;
+
+                    // Updates history.
+                    $updatelogs = $DB->get_records('upgrade_log', ['plugin' => $plugin->component], 'id DESC');
+
+                    $logs = null;
+
+                    foreach ($updatelogs as $updatelog) {
+
+                        $info = $updatelog->info;
+                        $filter1 = strpos($info, 'Starting');
+
+                        if (is_numeric($filter1)) {
+                            continue;
+                        }
+
+                        $filter2 = strpos($info, 'savepoint reached');
+                        if (is_numeric($filter2)) {
+                            continue;
+                        }
+
+
+                        $username = null;
+                        $email = null;
+                        $updatelog->userid = (int)$updatelog->userid;
+
+                        if ($updatelog->userid > 0) {
+                            $user = core_user::get_user($updatelog->userid);
+                            if ($user) {
+                                $username = $user->username;
+                                $email = $user->email;
+                            }
+                        } else {
+                            $updatelog->userid = null;
+                        }
+                        $updatelog->id = (int)$updatelog->id;
+                        $updatelog->type = (int)$updatelog->type;
+                        $updatelog->timemodified = (int)$updatelog->timemodified;
+                        $updatelog->username = $username;
+                        $updatelog->email = $email;
+                        $logs[] = (array) $updatelog;
                     }
-                } else {
-                    // Only contrib plugins which has updates.
-                    if (!$isstandard && $hasupdates) {
-                        $data['plugins'][] = $plugininfo;
-                    }
+                    $plugininfo['updates_log'] = $logs;
                 }
+
+                $data['plugins'][] = $plugininfo;
             }
         }
-        return $data;
+        $this->response->add_body_key('plugins', $data['plugins']);
     }
 
-    private function post_request($data) {
-        $this->responsecode = 501;
-        $this->responsemsg = 'Not implemented yet.';
+    private function post_request() {
+        $this->response->send_error(STATUS_501, 'Not Implemented yet.');
     }
 }
