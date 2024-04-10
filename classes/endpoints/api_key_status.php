@@ -38,12 +38,10 @@ class api_key_status extends endpoint implements endpoint_interface {
         return ['GET', 'POST'];
     }
 
-    public function process_request($requestmethod, $requestparameters, $payload = null, $responsetype = null) {
-        global $CFG, $SITE, $THEME, $PAGE;
-
-        switch ($requestmethod) {
+    public function execute_request() {
+        switch ($this->request->method) {
             case 'POST':
-                $this->update_api_key($payload);
+                $this->update_api_key($this->request->payload);
                 break;
 
             case 'GET':
@@ -52,28 +50,37 @@ class api_key_status extends endpoint implements endpoint_interface {
         }
     }
 
-    private function update_api_key($payload) {
-        $data = [];
+    public function process_request($requestmethod, $requestparameters, $payload = null, $responsetype = null) {
+        global $CFG, $SITE, $THEME, $PAGE;
+
+        switch ($requestmethod) {
+            case 'POST':
+                $this->update_api_key();
+                break;
+
+            case 'GET':
+                $this->get_api_key_expiration();
+                break;
+        }
+    }
+
+    private function update_api_key() {
         $now = time();
 
-        if (isset($payload->key_expiration_date)) {
-            $timestamp = $payload->key_expiration_date;
+        if (isset($this->request->payload->key_expiration_date)) {
+            $timestamp = $this->request->payload->key_expiration_date;
             set_config('key_expiration_date', $timestamp, 'local_moopanel');
-            $this->responsecode = 201;
-            $this->responsemsg = 'updated';
-            $this->responsebody->key_expiration_date = $timestamp;
+            $this->response->set_status(STATUS_201);
+            $this->response->add_body_key('status', 'Api key updated');
+            $this->response->add_body_key('key_expiration_date', $timestamp);
         } else {
-            $this->responsecode = 400;
-            $this->responsemsg = 'Bad request.';
-            $data['Error'] = 'Missing arguments - key_expiration_date';
-            $this->responsebody = (object)$data;
+            $this->response->send_error(STATUS_400, 'Missing API key expiration_date');
         }
     }
 
     private function get_api_key_expiration() {
-        $data['key_expiration_date'] = get_config('local_moopanel', 'key_expiration_date');
-        $this->responsecode = 200;
-        $this->responsemsg = 'OK';
-        $this->responsebody = (object)$data;
+        $timestamp = get_config('local_moopanel', 'key_expiration_date');
+        $expiration_date = date('m/d/Y H:i:s', $timestamp);
+        $this->response->add_body_key('key_expiration_date', $expiration_date);
     }
 }

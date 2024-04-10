@@ -38,7 +38,7 @@ class test_connection extends endpoint implements endpoint_interface {
         return ['GET'];
     }
 
-    public function process_request($requestmethod, $requestparameters, $payload = null, $responsetype = null) {
+    public function execute_request() {
         global $CFG, $SITE, $THEME, $PAGE;
 
         $PAGE->set_context(\context_system::instance());
@@ -47,16 +47,11 @@ class test_connection extends endpoint implements endpoint_interface {
         $logourl = $renderer->get_logo_url(300, 300);
         $logo = ($logourl) ? $logourl->raw_out() : '';
 
-        $data = [
-                'status' => 'OK',
-                'url' => $CFG->wwwroot,
-                'site_fullname' => $SITE->fullname ?? '',
-                'logo' => $logo,
-                'theme' => $CFG->theme ?? '',
-                'moodle_version' => $CFG->release ?? '',
-        ];
+        $this->response->add_body_key('url', $CFG->wwwroot);
+        $this->response->add_body_key('site_fullname', $SITE->fullname ?? '');
+        $this->response->add_body_key('logo', $logo);
+        $this->response->add_body_key('theme', $CFG->theme ?? '');
+        $this->response->add_body_key('moodle_version', $CFG->release ?? '');
 
-        $this->responsecode = 200;
-        $this->responsebody = (object)$data;
     }
 }

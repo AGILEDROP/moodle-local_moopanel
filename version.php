@@ -30,7 +30,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin = new stdClass();
-$plugin->version     = 2024040401;
+$plugin->version     = 2024040901;
 $plugin->requires    = 2022041900;      // YYYYMMDDHH (This is the release version for Moodle 4.0).
 $plugin->component   = 'local_moopanel';
 $plugin->release     = '1.0.0';

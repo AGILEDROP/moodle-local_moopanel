@@ -42,21 +42,14 @@ class admin_presets extends endpoint implements endpoint_interface {
         return ['GET', 'POST'];
     }
 
-    public function process_request($requestmethod, $requestparameters, $payload = null, $responsetype = null) {
-
-        switch ($requestmethod) {
+    public function execute_request() {
+        switch ($this->request->method) {
             case 'POST':
-                $this->post_request($payload);
+                $this->post_request();
                 break;
 
             case 'GET':
-
-                $data = $this->get_admin_preset();
-
-                $this->responsecode = 200;
-                $this->responsemsg = 'OK';
-                $this->responsebody = (object)$data;
-
+                $this->get_admin_preset();
                 break;
         }
     }
@@ -68,9 +61,7 @@ class admin_presets extends endpoint implements endpoint_interface {
         $classname = 'tool_admin_presets\\local\\action\\'.$action;
 
         if (!class_exists($classname)) {
-            return [
-                    'error' => 'There is no action.',
-            ];
+            $this->response->send_error(STATUS_400, 'Bad Request - there is no action.');
         }
 
         $manager = new manager();
@@ -87,11 +78,9 @@ class admin_presets extends endpoint implements endpoint_interface {
         ob_clean();
         ob_start();
 
-        $preset = $this->admin_preset_download($presetrecord->id);
+        //$preset = $this->admin_preset_download($presetrecord->id);
 
-        return [
-                'preset_id' => $presetrecord->id,
-        ];
+        $this->response->add_body_key('preset_id', $presetrecord->id);
     }
 
     private function admin_preset_exist() {
@@ -152,8 +141,7 @@ class admin_presets extends endpoint implements endpoint_interface {
         return $preset;
     }
 
-    private function post_request($data) {
-        $this->responsecode = 501;
-        $this->responsemsg = 'Not implemented yet.';
+    private function post_request() {
+        $this->response->send_error(STATUS_501, 'Not Implemented yet.');
     }
 }

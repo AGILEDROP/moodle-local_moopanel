@@ -29,31 +29,31 @@
 
 namespace local_moopanel;
 
-use stdClass;
-
 class endpoint {
 
-    public int $responsecode;
+    public request $request;
 
-    public string $responsemsg;
-
-    public stdClass $responsebody;
+    public response $response;
 
     public function __construct() {
-        $this->responsecode = 404;
-        $this->responsemsg = '';
-        $this->responsebody = new stdClass();
-    }
-    public function get_response_code() {
-        return $this->responsecode;
+        $this->request = new request();
+        $this->response = new response();
     }
 
-    public function get_response_msg() {
-        return $this->responsemsg;
+    public function set_request(request $request) {
+        $this->request = $request;
+    }
+
+    public function get_request() {
+        return $this->request;
+    }
+
+    public function set_response(response $response) {
+        $this->response = $response;
     }
 
     public function get_response() {
-        return $this->responsebody;
+        return $this->response;
     }
 
 }

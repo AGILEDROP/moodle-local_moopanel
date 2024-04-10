@@ -27,6 +27,8 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use local_moopanel\api;
+
 require('../../config.php');
 require('classes/moopanel_api.php');
 require('classes/error_handler.php');
@@ -34,16 +36,7 @@ require('classes/error_handler.php');
 
 set_exception_handler(\local_moopanel\error_handler::throw_error());
 
-$server = new \local_moopanel\moopanel_api();
+$server = new api();
+$server->run();
 
-$apikey = false;
-$ip = false;
-
-if (isset($_SERVER['HTTP_X_API_KEY'])) {
-    $apikey = $_SERVER['HTTP_X_API_KEY'];
-}
-
-$ip = $_SERVER['REMOTE_ADDR'];
-
-$server->run($apikey, $ip);
 die();

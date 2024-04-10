@@ -35,59 +35,48 @@ use local_moopanel\endpoint_interface;
 
 class user extends endpoint implements endpoint_interface {
 
+    private $user;
+
     public function define_allowed_request_methods() {
         return ['GET', 'POST'];
     }
 
-    public function process_request($requestmethod, $requestparameters, $payload = null, $responsetype = null) {
+    public function execute_request() {
 
-        switch ($requestmethod) {
+        switch ($this->request->method) {
             case 'POST':
-                $this->post_request($payload);
+                $this->post_request();
                 break;
 
             case 'GET':
-                $user = $this->get_user($payload);
-
-                $this->responsebody = (object)$user;
-
+                $user = $this->get_user();
                 break;
         }
     }
 
-    private function get_user($parameters) {
+    private function get_user() {
+
+        $parameters = $this->request->payload;
 
         if (isset($parameters->upn)) {
-            $user = core_user::get_user_by_email($parameters->upn);
+            $this->user = core_user::get_user_by_email($parameters->upn);
         } else if (isset($parameters->username)) {
-            $user = core_user::get_user_by_username($parameters->username);
+            $this->user = core_user::get_user_by_username($parameters->username);
         } else if (isset($parameters->id)) {
-            $user = core_user::get_user($parameters->id);
+            $this->user = core_user::get_user($parameters->id);
         } else {
-            $this->responsecode = 400;
-            $this->responsemsg = 'OK';
-            return [
-                    'error' => 'Specify id, username or upn (email) to get user.',
-            ];
+            $this->response->send_error(STATUS_400, 'No parameters provided.');
         }
 
-        if (!$user) {
-            $this->responsecode = 200;
-            $this->responsemsg = 'OK';
-            return [
-                    'error' => 'User not exist.',
-            ];
+        if (!$this->user) {
+            $this->response->send_error(STATUS_400, 'User not found.');
         }
 
-        $this->responsecode = 200;
-        $this->responsemsg = 'OK';
-        return [
-                'user' => $user,
-        ];
+        $this->response->add_body_key('user', $this->user);
     }
 
-    private function post_request($data) {
-        $this->responsecode = 501;
-        $this->responsemsg = 'Not implemented yet.';
+    private function post_request() {
+        $this->response->send_error(STATUS_501, 'Not implemented yet.');
+
     }
 }
