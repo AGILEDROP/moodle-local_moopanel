@@ -188,7 +188,7 @@ class api {
     }
 
     protected function parse_request_method($method) {
-        $allowedmethods = $this->endpoint->define_allowed_request_methods();
+        $allowedmethods = $this->endpoint->allowed_methods();
 
         if (!in_array($method, $allowedmethods)) {
             $this->response->send_error(STATUS_405, 'Method not allowed.');
