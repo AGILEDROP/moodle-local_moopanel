@@ -122,14 +122,8 @@ class api {
         // Execute request and build response.
         $this->endpoint->execute_request();
 
-        // Get response.
-        //$this->response = $this->endpoint->get_response();
-
         // Send response.
-        //$this->response-send();
         $this->endpoint->response->send();
-
-        // Check for parameters.
     }
 
     protected function api_enabled() {
