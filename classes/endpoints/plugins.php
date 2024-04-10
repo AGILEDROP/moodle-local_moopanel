@@ -37,7 +37,7 @@ use local_moopanel\endpoint_interface;
 
 class plugins extends endpoint implements endpoint_interface {
 
-    public function define_allowed_request_methods() {
+    public function allowed_methods() {
         return ['GET', 'POST'];
     }
 

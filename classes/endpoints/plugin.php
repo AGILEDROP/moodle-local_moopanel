@@ -39,7 +39,7 @@ class plugin extends endpoint implements endpoint_interface {
 
     private $plugin;
 
-    public function define_allowed_request_methods() {
+    public function allowed_methods() {
         return ['GET', 'POST'];
     }
 

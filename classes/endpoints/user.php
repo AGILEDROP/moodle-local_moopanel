@@ -37,7 +37,7 @@ class user extends endpoint implements endpoint_interface {
 
     private $user;
 
-    public function define_allowed_request_methods() {
+    public function allowed_methods() {
         return ['GET', 'POST'];
     }
 

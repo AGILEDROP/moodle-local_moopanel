@@ -35,7 +35,7 @@ interface endpoint_interface {
      * Allowed request methods for this endpoint.
      * @return array
      */
-    public function define_allowed_request_methods();
+    public function allowed_methods();
 
     /**
      * @return mixed

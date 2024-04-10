@@ -34,11 +34,10 @@ use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
 use memory_xml_output;
 use xml_writer;
-use tool_admin_presets\local\action\export;
 
 class admin_presets extends endpoint implements endpoint_interface {
 
-    public function define_allowed_request_methods() {
+    public function allowed_methods() {
         return ['GET', 'POST'];
     }
 
