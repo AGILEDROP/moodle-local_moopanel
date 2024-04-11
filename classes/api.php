@@ -154,12 +154,10 @@ class api {
             $contentheader = strpos($key, 'CONTENT');
 
             if ($httpheader === 0) {
-                //$this->request->set_header($key, $value);
                 $headers[$key] = $value;
             }
 
             if ($contentheader === 0) {
-                //$this->request->set_header($key, $value);
                 $headers[$key] = $value;
             }
         }

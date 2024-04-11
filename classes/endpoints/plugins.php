@@ -84,7 +84,6 @@ class plugins extends endpoint implements endpoint_interface {
                         'directory' => $plugin->get_dir(),
                 ];
 
-
                 if ($displayupdates) {
                     $availableupdates = null;
                     $updateschecker = checker::instance();
@@ -116,7 +115,6 @@ class plugins extends endpoint implements endpoint_interface {
                         if (is_numeric($filter2)) {
                             continue;
                         }
-
 
                         $username = null;
                         $email = null;

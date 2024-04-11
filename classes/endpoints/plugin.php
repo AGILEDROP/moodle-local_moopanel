@@ -45,7 +45,6 @@ class plugin extends endpoint implements endpoint_interface {
 
     public function execute_request() {
 
-
         // Check if plugin is provided.
         $this->plugin_provided();
 

@@ -80,7 +80,7 @@ class api_key_status extends endpoint implements endpoint_interface {
 
     private function get_api_key_expiration() {
         $timestamp = get_config('local_moopanel', 'key_expiration_date');
-        $expiration_date = date('m/d/Y H:i:s', $timestamp);
-        $this->response->add_body_key('key_expiration_date', $expiration_date);
+        $expirationdate = date('m/d/Y H:i:s', $timestamp);
+        $this->response->add_body_key('key_expiration_date', $expirationdate);
     }
 }
