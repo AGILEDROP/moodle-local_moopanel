@@ -127,9 +127,6 @@ class users extends endpoint implements endpoint_interface {
         }
 
         $this->response->add_body_key('users', $data);
-
-
-
     }
 
     private function post_request() {

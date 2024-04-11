@@ -45,7 +45,7 @@ class response {
     public $format;
 
     public function __construct() {
-        $this->set_status(200);
+        $this->set_status(STATUS_200);
         $this->headers = [];
         $this->add_header('Content-Type', 'application/json');
         $this->set_format('json');
@@ -53,8 +53,8 @@ class response {
         $this->errors = [];
     }
 
-    public function set_status($status_code) {
-        $this->status = $status_code;
+    public function set_status($status) {
+        $this->status = $status;
     }
 
     public function get_status() {
@@ -73,8 +73,8 @@ class response {
         }
     }
 
-    public function set_format($body_format) {
-        $this->format = $body_format;
+    public function set_format($format) {
+        $this->format = $format;
     }
 
     public function get_format() {
@@ -121,7 +121,7 @@ class response {
                 $body = json_encode($this->body);
                 break;
             case 'xml':
-                $body = xmlrpc_encode($this->body);
+                $body = [];
                 break;
             default:
                 $body = 'Unknown response format';
