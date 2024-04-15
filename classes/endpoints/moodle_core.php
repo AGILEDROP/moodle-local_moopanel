@@ -93,7 +93,7 @@ class moodle_core extends endpoint implements endpoint_interface {
         $this->response->add_body_key('current_version', $CFG->release);
         $this->response->add_body_key('last_check_for_updates', $lastcheck);
         $this->response->add_body_key('update_available', $updates);
-        $this->response->add_body_key('update_logs', $logs);
+        $this->response->add_body_key('update_log', $logs);
     }
 
 

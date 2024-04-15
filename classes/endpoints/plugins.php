@@ -95,7 +95,7 @@ class plugins extends endpoint implements endpoint_interface {
                         }
                         $availableupdates = $updates;
                     }
-                    $plugininfo['available_updates'] = $availableupdates;
+                    $plugininfo['update_available'] = $availableupdates;
 
                     // Updates history.
                     $updatelogs = $DB->get_records('upgrade_log', ['plugin' => $plugin->component], 'id DESC');
@@ -136,7 +136,7 @@ class plugins extends endpoint implements endpoint_interface {
                         $updatelog->email = $email;
                         $logs[] = (array) $updatelog;
                     }
-                    $plugininfo['updates_log'] = $logs;
+                    $plugininfo['update_log'] = $logs;
                 }
 
                 $data['plugins'][] = $plugininfo;
