@@ -127,8 +127,8 @@ class plugin extends endpoint implements endpoint_interface {
 
         $this->response->add_body_key('plugininfo', convert_to_array($data));
         $this->response->add_body_key('last_check_for_updates', $lastcheck);
-        $this->response->add_body_key('updates_available', $updates);
-        $this->response->add_body_key('updates_log', $logs);
+        $this->response->add_body_key('update_available', $updates);
+        $this->response->add_body_key('update_log', $logs);
     }
 
     private function get_plugin_config($plugin = null) {
