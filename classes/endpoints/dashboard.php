@@ -47,16 +47,16 @@ class dashboard extends endpoint implements endpoint_interface {
         $logourl = $renderer->get_logo_url(300, 300);
         $logocompacturl = $renderer->get_compact_logo_url(300, 300);
 
-        $logo = ($logourl) ? $logourl->raw_out() : '';
-        $logocompact = ($logocompacturl) ? $logocompacturl->raw_out() : '';
+        $logo = ($logourl) ? $logourl->raw_out() : null;
+        $logocompact = ($logocompacturl) ? $logocompacturl->raw_out() : null;
 
         $this->response->add_body_key('url', $CFG->wwwroot);
-        $this->response->add_body_key('site_fullname', $SITE->fullname ?? '');
-        $this->response->add_body_key('site_shortname', $SITE->shortname ?? '');
+        $this->response->add_body_key('site_fullname', $SITE->fullname ?? null);
+        $this->response->add_body_key('site_shortname', $SITE->shortname ?? null);
         $this->response->add_body_key('logo', $logo);
         $this->response->add_body_key('logocompact', $logocompact);
-        $this->response->add_body_key('theme', $CFG->theme ?? '');
-        $this->response->add_body_key('moodle_version', $CFG->release ?? '');
+        $this->response->add_body_key('theme', $CFG->theme ?? null);
+        $this->response->add_body_key('moodle_version', $CFG->release ?? null);
     }
 
 }

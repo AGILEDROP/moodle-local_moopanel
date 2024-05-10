@@ -91,6 +91,7 @@ class plugins extends endpoint implements endpoint_interface {
                     if ($pluginupdates) {
                         $updates = [];
                         foreach ($pluginupdates as $pluginupdate) {
+                            $pluginupdate->type = 'plugin';
                             $updates[] = $pluginupdate;
                         }
                         $availableupdates = $updates;
@@ -146,6 +147,29 @@ class plugins extends endpoint implements endpoint_interface {
     }
 
     private function post_request() {
-        $this->response->send_error(STATUS_501, 'Not Implemented yet.');
+        $update = in_array('update', $this->request->parameters);
+        if (!$update) {
+            $this->response->send_error(STATUS_400, 'Bad request.');
+        }
+        if (!isset($this->request->payload->updates)) {
+            $this->response->send_error(STATUS_400, 'Bad request - no updates specified.');
+        }
+
+        $updates = $this->request->payload->updates;
+        if (empty($updates)) {
+            $this->response->send_error(STATUS_400, 'Bad request - empty updates.');
+        }
+
+        $data = [];
+        foreach ($updates as $update) {
+            $data[] = [
+                    $update->model_id => [
+                            'status' => true,
+                        'info' => [],
+                    ],
+                ];
+        }
+
+        $this->response->add_body_key('updates', $data);
     }
 }

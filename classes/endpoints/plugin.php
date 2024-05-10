@@ -94,6 +94,11 @@ class plugin extends endpoint implements endpoint_interface {
         $updateschecker = checker::instance();
         $lastcheck = $updateschecker->get_last_timefetched();
         $updates = $updateschecker->get_update_info($this->plugin);
+        if (!empty($updates)) {
+            foreach ($updates as $update) {
+                $update->type = 'plugin';
+            }
+        }
 
         $updatelogs = $DB->get_records('upgrade_log', ['plugin' => $this->plugin], 'id DESC');
 

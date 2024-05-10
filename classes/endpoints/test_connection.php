@@ -45,13 +45,13 @@ class test_connection extends endpoint implements endpoint_interface {
         $renderer = $PAGE->get_renderer('core');
 
         $logourl = $renderer->get_logo_url(300, 300);
-        $logo = ($logourl) ? $logourl->raw_out() : '';
+        $logo = ($logourl) ? $logourl->raw_out() : null;
 
         $this->response->add_body_key('url', $CFG->wwwroot);
-        $this->response->add_body_key('site_fullname', $SITE->fullname ?? '');
+        $this->response->add_body_key('site_fullname', $SITE->fullname ?? null);
         $this->response->add_body_key('logo', $logo);
-        $this->response->add_body_key('theme', $CFG->theme ?? '');
-        $this->response->add_body_key('moodle_version', $CFG->release ?? '');
+        $this->response->add_body_key('theme', $CFG->theme ?? null);
+        $this->response->add_body_key('moodle_version', $CFG->release ?? null);
 
     }
 }
