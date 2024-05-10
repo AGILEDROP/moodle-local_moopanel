@@ -61,6 +61,14 @@ class moodle_core extends endpoint implements endpoint_interface {
         $lastcheck = $updateschecker->get_last_timefetched();
         $updates = $updateschecker->get_update_info('core');
 
+        if (!empty($updates)) {
+            foreach ($updates as $update) {
+                $current = $CFG->release;
+                $new = $update->release;
+                $update->type = $this->resolve_update_type($current, $new);
+            }
+        }
+
         $conditions = [
                 'plugin' => 'core',
         ];
@@ -99,5 +107,34 @@ class moodle_core extends endpoint implements endpoint_interface {
 
     private function post_request() {
         $this->response->send_error(STATUS_501, 'Method not implemented yet.');
+    }
+
+    private function resolve_update_type($currentversion, $newversion) {
+        if (!$newversion) {
+            return null;
+        }
+
+        $old = explode('.', $currentversion);
+        $new = explode('.', $newversion);
+
+        $mega1 = (int)$old[0] ?? false;
+        $mega2 = (int)$new[0] ?? false;
+
+        if (!$mega2) {
+            return null;
+        }
+
+        if ($mega1 != $mega2) {
+                return 'mega';
+            }
+
+        $major1 = (int)$old[1] ?? false;
+        $major2 = (int)$new[1] ?? false;
+
+        if ($major1 != $major2) {
+            return 'major';
+        }
+
+        return 'minor';
     }
 }
