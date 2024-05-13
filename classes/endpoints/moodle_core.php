@@ -125,16 +125,16 @@ class moodle_core extends endpoint implements endpoint_interface {
         }
 
         if ($mega1 != $mega2) {
-                return 'mega';
+                return 'core-mega';
             }
 
         $major1 = (int)$old[1] ?? false;
         $major2 = (int)$new[1] ?? false;
 
         if ($major1 != $major2) {
-            return 'major';
+            return 'core-major';
         }
 
-        return 'minor';
+        return 'core-minor';
     }
 }

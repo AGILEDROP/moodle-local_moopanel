@@ -170,6 +170,9 @@ class plugins extends endpoint implements endpoint_interface {
                 ];
         }
 
+        $pluginman = core_plugin_manager::instance();
+        // $pluginman->install_plugins([], true, true);
+
         $this->response->add_body_key('updates', $data);
     }
 }
