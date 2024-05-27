@@ -108,25 +108,50 @@ class users extends endpoint implements endpoint_interface {
         global $DB;
 
         $now = time();
-        $fromtime = $now - 150; // Last 150 seconds.
-        $sql = "SELECT username, firstname, lastname FROM {user} WHERE lastaccess > :fromtime";
-        $params = [
-                'fromtime' => $fromtime,
-        ];
 
-        $users = $DB->get_records_sql($sql, $params);
+        $payload = $this->request->payload;
 
-        $this->response->add_body_key('number_of_users', count($users));
-
-        $data = null;
-
-        if (!empty($users)) {
-            foreach ($users as $user) {
-                $data[] = $user;
-            }
+        // Parse start time.
+        if (isset($payload->startTime)) {
+            $start = (int)$payload->startTime;
+        } else {
+            $start = $now - 150; // Last 150 seconds.
         }
 
-        $this->response->add_body_key('users', $data);
+        // Parse end time.
+        if (isset($payload->endTime)) {
+            $end = (int)$payload->endTime;
+        } else {
+            $end = $now + 1;
+        }
+
+        // Validation.
+        if ($start > $end) {
+            $this->response->send_error(400, 'Invalid start time');
+        }
+
+        $sql = "SELECT username, firstname, lastname FROM {user} WHERE lastaccess >= :fromtime AND lastaccess < :totime";
+        $params = [
+            'fromtime' => $start,
+            'totime' => $end,
+        ];
+
+        // Get number of all users.
+        $allusers = $DB->count_records('user');
+        // ToDo remove + 10 users. It is just for test.
+        if ($allusers < 15) {
+            $allusers = $allusers + 10;
+        }
+
+        // Get online users.
+        $users = $DB->get_records_sql($sql, $params);
+
+        // ToDo - dummy action currently return random numbe- remove it.
+        // $online = count($users);
+        $online = rand(0, $allusers);
+
+        $this->response->add_body_key('all_users', $allusers);
+        $this->response->add_body_key('online', $online);
     }
 
     private function post_request() {
