@@ -169,11 +169,12 @@ class api {
     }
 
     protected function parse_request_endpoint($url) {
-        $urlparts = explode('/', $url);
-        $parameters = array_slice($urlparts, 4);
+        $param = parse_url($url);
+        $urlpath = $param['path'];
+        $urlpathparts = explode('/', $urlpath);
 
-        if (isset($parameters[0])) {
-            $endpointcandidate = $parameters[0];
+        if (isset($urlpathparts[4])) {
+            $endpointcandidate = $urlpathparts[4];
         } else {
             // Default endpoint.
             $endpointcandidate = 'test_connection';

@@ -57,7 +57,14 @@ class plugins extends endpoint implements endpoint_interface {
     private function get_plugins() {
         global $DB;
 
-        $displayupdates = in_array('updates', $this->request->parameters);
+        $path = $this->request->path;
+
+        if ($path == 'plugins/updates') {
+            $displayupdates = true;
+        } else {
+            $displayupdates = false;
+        }
+
 
         $pluginman = core_plugin_manager::instance();
         $data = [];
@@ -147,10 +154,7 @@ class plugins extends endpoint implements endpoint_interface {
     }
 
     private function post_request() {
-        $update = in_array('update', $this->request->parameters);
-        if (!$update) {
-            $this->response->send_error(STATUS_400, 'Bad request.');
-        }
+
         if (!isset($this->request->payload->updates)) {
             $this->response->send_error(STATUS_400, 'Bad request - no updates specified.');
         }
@@ -164,7 +168,7 @@ class plugins extends endpoint implements endpoint_interface {
         foreach ($updates as $update) {
             $data[] = [
                     $update->model_id => [
-                            'status' => true,
+                        'status' => true,
                         'info' => [],
                     ],
                 ];
