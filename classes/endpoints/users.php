@@ -45,13 +45,17 @@ class users extends endpoint implements endpoint_interface {
                 break;
 
             case 'GET':
-                $count = in_array('count', $this->request->parameters);
-                $online = in_array('online', $this->request->parameters);
 
-                if ($online) {
-                    $this->get_online_users();
-                } else {
-                    $this->get_users($count);
+                switch ($this->request->path) {
+                    case 'users/online':
+                        $this->get_online_users();
+                        break;
+                    case 'users/count':
+                        $this->get_users(true);
+                        break;
+                    default:
+                        $this->get_users(false);
+                        break;
                 }
                 break;
         }
@@ -109,18 +113,18 @@ class users extends endpoint implements endpoint_interface {
 
         $now = time();
 
-        $payload = $this->request->payload;
+        $parameters = $this->request->parameters;
 
         // Parse start time.
-        if (isset($payload->startTime)) {
-            $start = (int)$payload->startTime;
+        if (isset($parameters->timeStart)) {
+            $start = (int)$parameters->timeStart;
         } else {
             $start = $now - 150; // Last 150 seconds.
         }
 
         // Parse end time.
-        if (isset($payload->endTime)) {
-            $end = (int)$payload->endTime;
+        if (isset($parameters->timeEnd)) {
+            $end = (int)$parameters->timeEnd;
         } else {
             $end = $now + 1;
         }

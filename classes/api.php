@@ -109,6 +109,9 @@ class api {
         // Check if method is allowed for selected endpoint.
         $this->parse_request_method($_SERVER['REQUEST_METHOD']);
 
+        // Check for request path.
+        $this->parse_request_path($_SERVER['REQUEST_URI']);
+
         // Check for parameters.
         $this->parse_request_parameters($_SERVER['REQUEST_URI']);
 
@@ -194,10 +197,32 @@ class api {
         $this->request->set_method($method);
     }
 
+    protected function parse_request_path($url) {
+        $param = parse_url($url);
+        $urlpath = $param['path'];
+
+        $pathparts = explode('/', $urlpath);
+        $endpointpath = array_slice($pathparts, 4);
+        $path = implode('/', $endpointpath);
+
+        $this->request->set_path($path);
+    }
+
     protected function parse_request_parameters($url) {
-        $urlparts = explode('/', $url);
-        $parameters = array_slice($urlparts, 4);
-        $this->request->set_parameters($parameters);
+        // $urlparts = explode('/', $url);
+        // $parameters = array_slice($urlparts, 4);
+
+        $param = parse_url($url);
+
+        if (!isset($param['query'])) {
+            return;
+        }
+
+        $query = $param['query'];
+        parse_str($query, $queryparams);
+
+        // $this->request->set_parameters($parameters);
+        $this->request->set_parameters($queryparams);
     }
 
     protected function parse_request_payload() {

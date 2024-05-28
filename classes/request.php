@@ -38,6 +38,8 @@ class request {
 
     public $headers;
 
+    public $path;
+
     public $parameters;
 
     public $payload;
@@ -45,6 +47,7 @@ class request {
     public function __construct() {
         $this->set_method('GET');
         $this->headers = [];
+        $this->path = '';
         $this->parameters = [];
         $this->payload = [];
     }
@@ -77,7 +80,16 @@ class request {
         return $this->headers;
     }
 
+    public function set_path($path) {
+        $this->path = $path;
+    }
+
+    public function get_path() {
+        return $this->path;
+    }
+
     public function set_parameters(array $parameters) {
+        $parameters = (object)$parameters;
         $this->parameters = $parameters;
     }
 
