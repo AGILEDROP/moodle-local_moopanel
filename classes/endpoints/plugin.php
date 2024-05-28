@@ -57,7 +57,9 @@ class plugin extends endpoint implements endpoint_interface {
                 break;
 
             case 'GET':
-                if (in_array('config', $this->request->parameters)) {
+                $path = $this->request->path;
+
+                if ($path == 'plugin/config') {
                     $this->get_plugin_config();
                 } else {
                     $this->get_plugin_info();
@@ -68,8 +70,8 @@ class plugin extends endpoint implements endpoint_interface {
     }
 
     private function plugin_provided() {
-        if (isset($this->request->payload->plugin)) {
-            $this->plugin = $this->request->payload->plugin;
+        if (isset($this->request->parameters->plugin)) {
+            $this->plugin = $this->request->parameters->plugin;
         } else {
             $this->response->send_error(STATUS_400, 'Plugin not specified.');
         }

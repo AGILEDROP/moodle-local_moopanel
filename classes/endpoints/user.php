@@ -56,7 +56,7 @@ class user extends endpoint implements endpoint_interface {
 
     private function get_user() {
 
-        $parameters = $this->request->payload;
+        $parameters = $this->request->parameters;
 
         if (isset($parameters->upn)) {
             $this->user = core_user::get_user_by_email($parameters->upn);
