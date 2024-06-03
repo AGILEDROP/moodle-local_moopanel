@@ -32,6 +32,7 @@ namespace local_moopanel\endpoints;
 use core\update\checker;
 use core_plugin_manager;
 use core_user;
+use local_moopanel\background_process;
 use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
 use local_moopanel\util\plugin_manager;
@@ -39,16 +40,27 @@ use moodle_url;
 
 class plugins extends endpoint implements endpoint_interface {
 
+    private $countupdated;
+
     public function allowed_methods() {
         return ['GET', 'POST'];
     }
 
     public function execute_request() {
+        global $CFG;
+
+        $backgroundtask = new background_process();
+        $url = new moodle_url($CFG->wwwroot . '/local/moopanel/pages/fetch_plugin_updates.php', []);
+
+        $backgroundtask->run($url);
 
         $path = $this->request->path;
 
         switch ($this->request->method) {
             case 'POST':
+
+                $this->reset_updated();;
+
                 switch ($path) {
                     case 'plugins/update':
                         $this->post_update();
@@ -60,6 +72,11 @@ class plugins extends endpoint implements endpoint_interface {
                         $this->response->send_error(STATUS_400, 'Bad request - undefined method.');
                         break;
                 }
+
+                if ($this->countupdated) {
+                    $mustgotourl = new moodle_url($CFG->wwwroot.'/local/moopanel/pages/upgrade_noncore.php', []);
+                    $backgroundtask->run($mustgotourl);
+                }
                 break;
 
             case 'GET':
@@ -67,7 +84,6 @@ class plugins extends endpoint implements endpoint_interface {
                 break;
         }
     }
-
 
     private function get_plugins() {
         global $DB;
@@ -178,6 +194,7 @@ class plugins extends endpoint implements endpoint_interface {
     }
 
     private function post_update() {
+        global $CFG;
 
         if (!isset($this->request->payload->updates)) {
             $this->response->send_error(STATUS_400, 'Bad request - no updates specified.');
@@ -188,8 +205,8 @@ class plugins extends endpoint implements endpoint_interface {
             $this->response->send_error(STATUS_400, 'Bad request - empty updates.');
         }
 
-        $pluginman = core_plugin_manager::instance();
         $pluginmanager = new plugin_manager();
+        $pluginman = core_plugin_manager::instance();
 
         $data = [];
         foreach ($updates as $update) {
@@ -199,9 +216,9 @@ class plugins extends endpoint implements endpoint_interface {
             if (!$plugin) {
                 $data[] = [
                         $update->model_id => [
-                                'status' => false,
+                            'status' => false,
                             'component' => $update->component,
-                                'error' => 'Plugin not exist',
+                            'error' => 'Plugin not exist in Moodle.',
                         ],
                 ];
                 continue;
@@ -209,12 +226,22 @@ class plugins extends endpoint implements endpoint_interface {
 
             $availableupdates = $plugin->available_updates();
 
+            $this->response->add_body_key('updates', $data);
+
             if (!$availableupdates) {
+                $versioncurrent = (int)$plugin->versiondisk;
+                $versionrequest = (int)$update->version;
+
+                if ($versionrequest == $versioncurrent) {
+                    $msg = 'Update already installed.';
+                } else {
+                    $msg = 'Update not found.';
+                }
                 $data[] = [
                     $update->model_id => [
                         'status' => false,
                         'component' => $update->component,
-                        'error' => 'Update not exist.',
+                        'error' => $msg,
                     ],
                 ];
                 continue;
@@ -241,25 +268,16 @@ class plugins extends endpoint implements endpoint_interface {
             }
 
             $report = $pluginmanager->install_zip($updatetoinstall->download);
+            if ($report['status']) {
+                $this->increase_updated();
+            }
 
             $data[] = [
                     $update->model_id => $report,
                 ];
         }
 
-
         $this->response->add_body_key('updates', $data);
-
-        // Process moodle upgrade.
-        $mustgoto = new moodle_url($CFG->wwwroot.'/local/moopanel/pages/update_progress_confirm.php', []);
-        $pluginmanager->upgrade_noncore($mustgoto);
-
-        // Clear cache.
-        core_plugin_manager::reset_caches();
-
-        // Run plugin update checker.
-        $updateschecker = checker::instance();
-        $updateschecker->fetch();
     }
 
     private function post_zip_install() {
@@ -280,40 +298,23 @@ class plugins extends endpoint implements endpoint_interface {
         foreach ($updates as $update) {
             $key = $update;
 
-            $reports[$key] = $pluginmanager->install_zip($update);
-        }
-
-        // Process moodle upgrade.
-        $mustgoto = new moodle_url($CFG->wwwroot.'/local/moopanel/pages/update_progress_confirm.php', []);
-        $pluginmanager->upgrade_noncore($mustgoto);
-
-        // Clear cache.
-        core_plugin_manager::reset_caches();
-        checker::reset_caches();
-
-        // Run plugin update checker.
-        $updateschecker = checker::instance();
-        $updateschecker->fetch();
-
-
-        $updates = [];
-        foreach ($reports as $key => $report) {
+            $report = $pluginmanager->install_zip($update);
+            $reports[$key] = $report;
 
             if ($report['status']) {
-                $pluginman = core_plugin_manager::instance();
-                $plugin = $pluginman->get_plugin_info($report['component']);
-                if ($plugin) {
-                    $report['db_updated'] = true;
-                }
-                else {
-                    $report['db_updated'] = false;
-                }
+                $this->increase_updated();
             }
 
-            $updates[][$key] = $report;
         }
 
         $this->response->add_body_key("updates", $updates);
+    }
 
+    private function reset_updated() {
+        $this->countupdated = 0;
+    }
+
+    private function increase_updated() {
+        $this->countupdated++;
     }
 }

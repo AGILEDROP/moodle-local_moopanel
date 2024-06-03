@@ -45,12 +45,11 @@ class plugin_manager {
     }
 
     public function install_zip($zipurl) {
-        global $CFG, $SITE, $PAGE, $OUTPUT, $USER;
+        global $CFG, $USER;
 
         $report = [];
         $report['component'] = null;
         $report['status'] = false;
-        $report['db_updated'] = false;
         $report['error'] = null;
 
         // ToDo login user.
@@ -101,10 +100,6 @@ class plugin_manager {
 
         //Remove downloaded file.
         $delete = remove_dir($storage);
-
-        if (!$installed) {
-            return $report;
-        }
 
         return $report;
     }
