@@ -88,42 +88,48 @@ class api {
 
     public function run() {
 
-        // Check if API is enabled in Moodle.
-        $apienabled = $this->api_enabled();
-        if (!$apienabled) {
-            $this->response->send_error(STATUS_403, 'API is disabled.');
+        try {
+            // Check if API is enabled in Moodle.
+            $apienabled = $this->api_enabled();
+            if (!$apienabled) {
+                $this->response->send_error(STATUS_403, 'API is disabled.');
+            }
+
+            // Get request headers.
+            $this->parse_request_headers($_SERVER);
+
+            // Check for authorization.
+            $this->authorize();
+            if (!$this->authorized) {
+                $this->response->send_error(STATUS_401, 'Authorization failed.');
+            }
+
+            // Check for endpoint.
+            $this->parse_request_endpoint($_SERVER['REQUEST_URI']);
+
+            // Check if method is allowed for selected endpoint.
+            $this->parse_request_method($_SERVER['REQUEST_METHOD']);
+
+            // Check for request path.
+            $this->parse_request_path($_SERVER['REQUEST_URI']);
+
+            // Check for parameters.
+            $this->parse_request_parameters($_SERVER['REQUEST_URI']);
+
+            // Check for payload.
+            $this->parse_request_payload();
+
+            // Set request and response to endpoint controller class.
+            $this->endpoint->set_request($this->request);
+            $this->endpoint->set_response($this->response);
+
+            // Execute request and build response.
+            $this->endpoint->execute_request();
+
+        } catch (\Exception $e) {
+            // Send exception response.
+            $this->response->send_exception($e);
         }
-
-        // Get request headers.
-        $this->parse_request_headers($_SERVER);
-
-        // Check for authorization.
-        $this->authorize();
-        if (!$this->authorized) {
-            $this->response->send_error(STATUS_401, 'Authorization failed.');
-        }
-
-        // Check for endpoint.
-        $this->parse_request_endpoint($_SERVER['REQUEST_URI']);
-
-        // Check if method is allowed for selected endpoint.
-        $this->parse_request_method($_SERVER['REQUEST_METHOD']);
-
-        // Check for request path.
-        $this->parse_request_path($_SERVER['REQUEST_URI']);
-
-        // Check for parameters.
-        $this->parse_request_parameters($_SERVER['REQUEST_URI']);
-
-        // Check for payload.
-        $this->parse_request_payload();
-
-        // Set request and response to endpoint controller class.
-        $this->endpoint->set_request($this->request);
-        $this->endpoint->set_response($this->response);
-
-        // Execute request and build response.
-        $this->endpoint->execute_request();
 
         // Send response.
         $this->endpoint->response->send();
