@@ -29,6 +29,8 @@
 
 namespace local_moopanel;
 
+use Exception;
+
 /**
  * Define response status codes.
  */
@@ -126,7 +128,7 @@ class api {
             // Execute request and build response.
             $this->endpoint->execute_request();
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Send exception response.
             $this->response->send_exception($e);
         }

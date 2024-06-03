@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version information for local_moopanel plugin.
+ * Utility page - fetch plugin update.
  *
- * File         version.php
+ * File         fetch_plugin_updates.php
  * Encoding     UTF-8
  *
  * @package     local_moopanel
@@ -27,11 +27,20 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+use core\update\checker;
 
-$plugin = new stdClass();
-$plugin->version     = 2024060302;
-$plugin->requires    = 2022041900;      // YYYYMMDDHH (This is the release version for Moodle 4.0).
-$plugin->component   = 'local_moopanel';
-$plugin->release     = '1.0.0';
-$plugin->dependencies = [];
+require_once(__DIR__ . '/../../../config.php');
+
+// require_login();
+
+$url = new moodle_url('/local/moopanel/pages/fetch_plugin_updates.php');
+
+$USER = core_user::get_user(2);
+$id = $USER->id;
+
+$PAGE->set_url($url);
+$PAGE->set_context(context_system::instance());
+
+// Run plugin update checker.
+$updateschecker = checker::instance();
+$updateschecker->fetch();

@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version information for local_moopanel plugin.
+ * Utility page - upgrade plugins database.
  *
- * File         version.php
+ * File         update_progress_confirm.php
  * Encoding     UTF-8
  *
  * @package     local_moopanel
@@ -27,11 +27,24 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+require_once(__DIR__ . '/../../../config.php');
 
-$plugin = new stdClass();
-$plugin->version     = 2024060302;
-$plugin->requires    = 2022041900;      // YYYYMMDDHH (This is the release version for Moodle 4.0).
-$plugin->component   = 'local_moopanel';
-$plugin->release     = '1.0.0';
-$plugin->dependencies = [];
+// require_login();
+
+$url = new moodle_url('/local/moopanel/pages/upgrade_noncore.php');
+
+$USER = core_user::get_user(2);
+$id = $USER->id;
+
+$PAGE->set_url($url);
+$PAGE->set_context(context_system::instance());
+
+// Include needle library.
+require_once($CFG->dirroot.'/lib/adminlib.php');
+require_once($CFG->dirroot.'/lib/pagelib.php');
+require_once($CFG->dirroot.'/lib/moodlelib.php');
+require_once($CFG->dirroot.'/lib/upgradelib.php');
+
+upgrade_noncore(true);
+
+$defaultsettings = admin_apply_default_settings(null, false);

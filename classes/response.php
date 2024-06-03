@@ -29,6 +29,8 @@
 
 namespace local_moopanel;
 
+use core_user;
+use Exception;
 use stdClass;
 
 /**
@@ -147,8 +149,10 @@ class response {
         die();
     }
 
-    public function send_exception(\Exception $exception) {
-        $this->set_status(STATUS_500);
+    public function send_exception(Exception $exception) {
+        global $CFG;
+
+        $this->set_status(555);
         $this->body = new stdClass();
         $this->add_body_key('code', $exception->getCode());
         $this->add_body_key('message', $exception->getMessage());
@@ -156,6 +160,33 @@ class response {
         $this->add_body_key('line', $exception->getLine());
         $this->add_body_key('trace', $exception->getTraceAsString());
 
+        $subject = 'Error on ' . $CFG->wwwroot;
+        $msg = $this->encode_body();
+        $to = 'uros.virag@agiledrop.com';
+
+        $this->send_exception_to_email($to, $subject, $msg);
+
         $this->send();
+    }
+
+    /**
+     * Send report message to given email address.
+     *
+     * @param string $to Email address.
+     * @param string $subject Message subject.
+     * @param string $body Message body (html).
+     * @return void
+     */
+    private function send_exception_to_email($to, $subject, $body) {
+
+        $from = core_user::get_noreply_user();
+        $replyto = core_user::get_noreply_user();
+
+        $headers  = "From: " . $from->email . "\r\n";
+        $headers .= "Reply-To: " . $replyto->email . "\r\n";
+        $headers .= "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+
+        mail($to, $subject, $body, $headers);
     }
 }

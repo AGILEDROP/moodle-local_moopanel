@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Utility class - plugin manager.
+ * Moopanel background_process class.
  *
- * File         plugins.php
+ * File         background_process.php
  * Encoding     UTF-8
  *
  * @package     local_moopanel
@@ -27,26 +27,29 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once(__DIR__ . '/../../../config.php');
+namespace local_moopanel;
 
-// require_login();
+use moodle_url;
 
-$url = new moodle_url('/local/moopanel/pages/update_progress_confirm.php');
+class background_process {
 
-//$plugin = optional_param('plugin', '', PARAM_COMPONENT);
+    public function run(moodle_url $url, $timeout = 30) {
 
-$USER = core_user::get_user(2);
-$id = $USER->id;
+        $handler = curl_init($url);
+        curl_setopt($handler, CURLOPT_POST, 0);
+        curl_setopt($handler, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($handler, CURLOPT_TIMEOUT, $timeout);
 
-$PAGE->set_url($url);
-$PAGE->set_context(context_system::instance());
+        $response = curl_exec($handler);
 
-// Include needle library.
-require_once($CFG->dirroot.'/lib/adminlib.php');
-require_once($CFG->dirroot.'/lib/pagelib.php');
-require_once($CFG->dirroot.'/lib/moodlelib.php');
-require_once($CFG->dirroot.'/lib/upgradelib.php');
+        $statuscode = curl_getinfo($handler, CURLINFO_HTTP_CODE);
 
-upgrade_noncore(true);
+        curl_close($handler);
 
-$defaultsettings = admin_apply_default_settings(null, false);
+        if ($statuscode != 200) {
+            return false;
+        }
+
+        return true;
+    }
+}
