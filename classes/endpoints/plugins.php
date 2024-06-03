@@ -34,6 +34,8 @@ use core_plugin_manager;
 use core_user;
 use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
+use local_moopanel\util\plugin_manager;
+use moodle_url;
 
 class plugins extends endpoint implements endpoint_interface {
 
@@ -42,9 +44,22 @@ class plugins extends endpoint implements endpoint_interface {
     }
 
     public function execute_request() {
+
+        $path = $this->request->path;
+
         switch ($this->request->method) {
             case 'POST':
-                $this->post_request();
+                switch ($path) {
+                    case 'plugins/update':
+                        $this->post_update();
+                        break;
+                    case 'plugins/installzip':
+                        $this->post_zip_install();
+                        break;
+                    default:
+                        $this->response->send_error(STATUS_400, 'Bad request - undefined method.');
+                        break;
+                }
                 break;
 
             case 'GET':
@@ -57,18 +72,26 @@ class plugins extends endpoint implements endpoint_interface {
     private function get_plugins() {
         global $DB;
 
-        $path = $this->request->path;
+        $pluginman = core_plugin_manager::instance();
+        $updateschecker = checker::instance();
+        $availableupdates = $pluginman->available_updates();
 
+        $lastcheck = $updateschecker->get_last_timefetched();
+
+        $path = $this->request->path;
         if ($path == 'plugins/updates') {
             $displayupdates = true;
+
+
         } else {
             $displayupdates = false;
         }
 
+        $this->response->add_body_key('last_check_for_updates', $lastcheck);
 
-        $pluginman = core_plugin_manager::instance();
         $data = [];
         $plugintypes = $pluginman->get_plugins();
+
 
         foreach ($plugintypes as $key => $plugintype) {
 
@@ -77,7 +100,7 @@ class plugins extends endpoint implements endpoint_interface {
             foreach ($plugins as $plugin) {
 
                 $isstandard = $plugin->is_standard();
-                $hasupdates = (bool)$plugin->available_updates();
+                $hasupdates = array_key_exists($plugin->component, $availableupdates);
                 $plugininfo = [
                         'plugin' => $plugin->name,
                         'plugintype' => $key,
@@ -86,24 +109,25 @@ class plugins extends endpoint implements endpoint_interface {
                         'version' => $plugin->versiondb,
                         'enabled' => (bool)$plugin->is_enabled(),
                         'is_standard' => $isstandard,
-                        'has_updates' => ($hasupdates) ? $hasupdates : null,
+                        'has_updates' => $hasupdates,
                         'settings_section' => $plugin->get_settings_section_name(),
                         'directory' => $plugin->get_dir(),
                 ];
 
                 if ($displayupdates) {
-                    $availableupdates = null;
-                    $updateschecker = checker::instance();
-                    $pluginupdates = $updateschecker->get_update_info($plugin->component);
-                    if ($pluginupdates) {
-                        $updates = [];
-                        foreach ($pluginupdates as $pluginupdate) {
-                            $pluginupdate->type = 'plugin';
-                            $updates[] = $pluginupdate;
+                    $pluginavailableupdates = null;
+                    if ($hasupdates) {
+                        $pluginupdates = $updateschecker->get_update_info($plugin->component);
+                        if ($pluginupdates) {
+                            $updates = [];
+                            foreach ($pluginupdates as $pluginupdate) {
+                                $pluginupdate->type = 'plugin';
+                                $updates[] = $pluginupdate;
+                            }
+                            $pluginavailableupdates = $updates;
                         }
-                        $availableupdates = $updates;
+                        $plugininfo['update_available'] = $pluginavailableupdates;
                     }
-                    $plugininfo['update_available'] = $availableupdates;
 
                     // Updates history.
                     $updatelogs = $DB->get_records('upgrade_log', ['plugin' => $plugin->component], 'id DESC');
@@ -153,7 +177,7 @@ class plugins extends endpoint implements endpoint_interface {
         $this->response->add_body_key('plugins', $data['plugins']);
     }
 
-    private function post_request() {
+    private function post_update() {
 
         if (!isset($this->request->payload->updates)) {
             $this->response->send_error(STATUS_400, 'Bad request - no updates specified.');
@@ -164,19 +188,132 @@ class plugins extends endpoint implements endpoint_interface {
             $this->response->send_error(STATUS_400, 'Bad request - empty updates.');
         }
 
+        $pluginman = core_plugin_manager::instance();
+        $pluginmanager = new plugin_manager();
+
         $data = [];
         foreach ($updates as $update) {
-            $data[] = [
+
+            $plugin = $pluginman->get_plugin_info($update->component);
+
+            if (!$plugin) {
+                $data[] = [
+                        $update->model_id => [
+                                'status' => false,
+                            'component' => $update->component,
+                                'error' => 'Plugin not exist',
+                        ],
+                ];
+                continue;
+            }
+
+            $availableupdates = $plugin->available_updates();
+
+            if (!$availableupdates) {
+                $data[] = [
                     $update->model_id => [
-                        'status' => true,
-                        'info' => [],
+                        'status' => false,
+                        'component' => $update->component,
+                        'error' => 'Update not exist.',
                     ],
+                ];
+                continue;
+            }
+
+            $updatetoinstall = null;
+            foreach ($availableupdates as $availableupdate) {
+                if ($availableupdate->version == $update->version) {
+                    if ($availableupdate->download == $update->download) {
+                        $updatetoinstall = $availableupdate;
+                    }
+                }
+            }
+
+            if (!$updatetoinstall) {
+                $data[] = [
+                        $update->model_id => [
+                                'status' => false,
+                                'component' => $update->component,
+                                'error' => 'Update not exist.',
+                        ],
+                ];
+                continue;
+            }
+
+            $report = $pluginmanager->install_zip($updatetoinstall->download);
+
+            $data[] = [
+                    $update->model_id => $report,
                 ];
         }
 
-        $pluginman = core_plugin_manager::instance();
-        // $pluginman->install_plugins([], true, true);
 
         $this->response->add_body_key('updates', $data);
+
+        // Process moodle upgrade.
+        $mustgoto = new moodle_url($CFG->wwwroot.'/local/moopanel/pages/update_progress_confirm.php', []);
+        $pluginmanager->upgrade_noncore($mustgoto);
+
+        // Clear cache.
+        core_plugin_manager::reset_caches();
+
+        // Run plugin update checker.
+        $updateschecker = checker::instance();
+        $updateschecker->fetch();
+    }
+
+    private function post_zip_install() {
+        global $CFG;
+
+        $pluginmanager = new plugin_manager();
+
+        if (!isset($this->request->payload->updates)) {
+            $this->response->send_error(STATUS_400, 'Bad request - no updates specified.');
+        }
+
+        $updates = $this->request->payload->updates;
+        if (empty($updates)) {
+            $this->response->send_error(STATUS_400, 'Bad request - no zip files urls specified.');
+        }
+
+        $reports = [];
+        foreach ($updates as $update) {
+            $key = $update;
+
+            $reports[$key] = $pluginmanager->install_zip($update);
+        }
+
+        // Process moodle upgrade.
+        $mustgoto = new moodle_url($CFG->wwwroot.'/local/moopanel/pages/update_progress_confirm.php', []);
+        $pluginmanager->upgrade_noncore($mustgoto);
+
+        // Clear cache.
+        core_plugin_manager::reset_caches();
+        checker::reset_caches();
+
+        // Run plugin update checker.
+        $updateschecker = checker::instance();
+        $updateschecker->fetch();
+
+
+        $updates = [];
+        foreach ($reports as $key => $report) {
+
+            if ($report['status']) {
+                $pluginman = core_plugin_manager::instance();
+                $plugin = $pluginman->get_plugin_info($report['component']);
+                if ($plugin) {
+                    $report['db_updated'] = true;
+                }
+                else {
+                    $report['db_updated'] = false;
+                }
+            }
+
+            $updates[][$key] = $report;
+        }
+
+        $this->response->add_body_key("updates", $updates);
+
     }
 }

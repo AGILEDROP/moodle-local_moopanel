@@ -29,6 +29,8 @@
 
 namespace local_moopanel;
 
+use stdClass;
+
 /**
  * MooPanel API response definition class.
  */
@@ -49,7 +51,7 @@ class response {
         $this->headers = [];
         $this->add_header('Content-Type', 'application/json');
         $this->set_format('json');
-        $this->body = new \stdClass();
+        $this->body = new stdClass();
         $this->errors = [];
     }
 
@@ -143,5 +145,17 @@ class response {
         echo $this->encode_body();
 
         die();
+    }
+
+    public function send_exception(\Exception $exception) {
+        $this->set_status(STATUS_500);
+        $this->body = new stdClass();
+        $this->add_body_key('code', $exception->getCode());
+        $this->add_body_key('message', $exception->getMessage());
+        $this->add_body_key('file', $exception->getFile());
+        $this->add_body_key('line', $exception->getLine());
+        $this->add_body_key('trace', $exception->getTraceAsString());
+
+        $this->send();
     }
 }

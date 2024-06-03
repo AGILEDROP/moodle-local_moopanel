@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Moopanel API error handler class.
+ * Utility class - plugin manager.
  *
- * File         error_handler.php
+ * File         plugins.php
  * Encoding     UTF-8
  *
  * @package     local_moopanel
@@ -27,22 +27,26 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_moopanel;
+require_once(__DIR__ . '/../../../config.php');
 
-use Throwable;
+// require_login();
 
-class error_handler {
+$url = new moodle_url('/local/moopanel/pages/update_progress_confirm.php');
 
-    public static function throw_error(Throwable $exception = null) : void {
-        if ($exception) {
-            http_response_code(500);
-            echo json_encode([
-                'code' => $exception->getCode(),
-                'message' => $exception->getMessage(),
-                'file' => $exception->getFile(),
-                'line' => $exception->getLine(),
-                'trace' => $exception->getTrace(),
-            ]);
-        }
-    }
-}
+//$plugin = optional_param('plugin', '', PARAM_COMPONENT);
+
+$USER = core_user::get_user(2);
+$id = $USER->id;
+
+$PAGE->set_url($url);
+$PAGE->set_context(context_system::instance());
+
+// Include needle library.
+require_once($CFG->dirroot.'/lib/adminlib.php');
+require_once($CFG->dirroot.'/lib/pagelib.php');
+require_once($CFG->dirroot.'/lib/moodlelib.php');
+require_once($CFG->dirroot.'/lib/upgradelib.php');
+
+upgrade_noncore(true);
+
+$defaultsettings = admin_apply_default_settings(null, false);
