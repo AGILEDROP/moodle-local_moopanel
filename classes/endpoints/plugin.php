@@ -57,13 +57,7 @@ class plugin extends endpoint implements endpoint_interface {
                 break;
 
             case 'GET':
-                $path = $this->request->path;
-
-                if ($path == 'plugin/config') {
-                    $this->get_plugin_config();
-                } else {
-                    $this->get_plugin_info();
-                }
+                $this->get_plugin();
                 break;
         }
 
@@ -87,24 +81,80 @@ class plugin extends endpoint implements endpoint_interface {
         }
     }
 
-    private function get_plugin_info() {
+    private function get_plugin() {
         global $DB;
+
+        $parameters = $this->request->parameters;
+
+        $displayupdates = false;
+        $displayupdateslog = false;
+        $displayconfig = false;
+
+        if (isset($parameters->displayupdates)) {
+            $displayupdates = true;
+        }
+
+        if (isset($parameters->displayupdateslog)) {
+            $displayupdateslog = true;
+        }
+
+        if (isset($parameters->displayconfig)) {
+            $displayconfig = true;
+        }
 
         $pluginman = core_plugin_manager::instance();
         $data = $pluginman->get_plugin_info($this->plugin);
 
+        if (isset($data->pluginman)) {
+            unset($data->pluginman);
+        }
+
+        $this->response->add_body_key('plugininfo', convert_to_array($data));
+
+        // Available updates.
+        if ($displayupdates) {
+            $updateschecker = checker::instance();
+
+            $lastcheck = $updateschecker->get_last_timefetched();
+            $updates = $this->get_plugin_updates($this->plugin);
+
+            $this->response->add_body_key('last_check_for_updates', $lastcheck);
+            $this->response->add_body_key('update_available', $updates);
+        }
+
+        // Updates log.
+        if ($displayupdateslog) {
+            $logs = $this->get_plugin_updates_log($this->plugin);
+            $this->response->add_body_key('update_log', $logs);
+        }
+
+        // Current plugin config.
+        if ($displayconfig) {
+            $config = $this->get_plugin_config($this->plugin);
+            $this->response->add_body_key('pluginconfig', $config);
+        }
+    }
+
+    private function get_plugin_updates($plugin) {
+        $updates = [];
+
         $updateschecker = checker::instance();
-        $lastcheck = $updateschecker->get_last_timefetched();
-        $updates = $updateschecker->get_update_info($this->plugin);
-        if (!empty($updates)) {
-            foreach ($updates as $update) {
-                $update->type = 'plugin';
+        $pluginupdates = $updateschecker->get_update_info($plugin);
+        if (!empty($pluginupdates)) {
+            foreach ($pluginupdates as $pluginupdate) {
+                $pluginupdate->type = 'plugin';
+                $updates[] = $pluginupdate;
             }
         }
 
-        $updatelogs = $DB->get_records('upgrade_log', ['plugin' => $this->plugin], 'id DESC');
+        return $updates;
+    }
 
+    private function get_plugin_updates_log($plugin) {
+        global $DB;
         $logs = [];
+
+        $updatelogs = $DB->get_records('upgrade_log', ['plugin' => $plugin], 'id DESC');
 
         foreach ($updatelogs as $updatelog) {
             $username = null;
@@ -128,21 +178,18 @@ class plugin extends endpoint implements endpoint_interface {
             $logs[] = (array) $updatelog;
         }
 
-        if (isset($data->pluginman)) {
-            unset($data->pluginman);
-        }
-
-        $this->response->add_body_key('plugininfo', convert_to_array($data));
-        $this->response->add_body_key('last_check_for_updates', $lastcheck);
-        $this->response->add_body_key('update_available', $updates);
-        $this->response->add_body_key('update_log', $logs);
+        return $logs;
     }
 
-    private function get_plugin_config($plugin = null) {
+    private function get_plugin_config($plugin) {
 
         $config = get_config($plugin);
 
-        $this->response->add_body_key('pluginconfig', $config);
+        if ($config) {
+            return $config;
+        }
+
+        return [];
     }
 
     private function post_request() {
