@@ -51,22 +51,26 @@ class users extends endpoint implements endpoint_interface {
                         $this->get_online_users();
                         break;
                     case 'users/count':
-                        $this->get_users(true);
+                        $this->get_users(false);
                         break;
                     default:
-                        $this->get_users(false);
+                        $this->get_users();
                         break;
                 }
                 break;
         }
     }
 
-    private function get_users($count) {
+    private function get_users($count = true) {
 
+        $parameters = $this->request->parameters;
         $payload = $this->request->payload;
 
-        $count = !$count;
+        $search = $parameters->search ?? '';
+        $fields = $parameters->fields ?? '*';
+        $sort = $parameters->sort ?? 'lastname ASC';
 
+        /*
         $search = (isset($payload->search)) ? $payload->search : '';
         $confirmed = (isset($payload->confirmed)) ? $payload->confirmed : false;
         $ignoreids = (isset($payload->ignoreids)) ? $payload->ignoreids : null;
@@ -76,9 +80,10 @@ class users extends endpoint implements endpoint_interface {
         $page = (isset($payload->page)) ? $payload->page : '';
         $limit = (isset($payload->limit)) ? $payload->limit : 9999999999;
         $fields = (isset($payload->fields)) ? $payload->fields : '*';
+      */
 
         $data = [];
-        $users = get_users($count, $search, $confirmed, $ignoreids, $sort, $firstinitial, $lastinitial, $page, $limit, $fields);
+        $users = get_users($count, $search, false, null, $sort, '', '', '', '', $fields);
 
         if (is_numeric($users)) {
             $this->response->add_body_key('number_of_users', $users);
@@ -89,7 +94,7 @@ class users extends endpoint implements endpoint_interface {
             $this->response->add_body_key('users', null);
             return;
         }
-
+/*
         if ($fields == '*') {
             foreach ($users as $user) {
                 $data['users'][] = [
@@ -104,7 +109,12 @@ class users extends endpoint implements endpoint_interface {
                 $data['users'][] = $user;
             }
         }
+*/
+        foreach ($users as $user) {
+            $data['users'][] = $user;
+        }
 
+        $this->response->add_body_key('number_of_users', count($data['users']));
         $this->response->add_body_key('users', $data['users']);
     }
 

@@ -15,17 +15,17 @@ Moopanel App provide you an API-key which you must paste into plugin config.
 Moopanel API use API-key authorisation type. Please add ```X-API-KEY``` key and its value to request header.
 
 ## Available endpoints
-All endpoints url starts with ```Moodle root url``` + ```/local/moopanel/index.php```.
+All endpoints url starts with ```Moodle root url``` + ```/local/moopanel/server.php```.
 
 
 ### Endpoint ```/``` or ```/test_connection``` 
 #### ```[GET request]```
-Return response with basic information about Moodle
+Return response with basic information about Moodle installation.
 
 
 ### Endpoint ```/dashboard```
 #### ```[GET request]```
-Return response with some additional information about Moodle
+Return response with some additional information about Moodle installation.
 
 
 ### Endpoint ```/api_key_status```
@@ -53,91 +53,120 @@ Request body example 1 (fixed date)
 
 ### Endpoint ```/users```
 #### ```[GET request]```
-Return list of Moodle users.
-Filters can be provided in request body.
-  - request body example
-```json
-{
-    "data": {
-        "search": "abc",
-        "confirmed": true,
-        "ignoreids": [1,3,5,7,99],
-        "sort": "firstname ASC",
-        "firstinitial": "A",
-        "lastinitial": "B",
-        "page": 3,
-        "limit": 10,
-        "fields": "firstname,lastname,username"
-        }
-}
-```
-Available options:
+Return list of all Moodle users.
+Filters can be provided in url parameters.
+Example:  ```/users?search=ab&sort=firstname DESC&fields=id,firstname,lastname```.
+
+Available parameters:
   - string ```"search"``` A simple string to search for
-  - bool ```"confirmed"``` A switch to allow/disallow unconfirmed users
-  - array ```"ignoreids"``` A list of IDs to ignore, eg 2,4,5,8,9,10
   - string ```"sort"``` A SQL snippet for the sorting criteria to use
-  - string ```"firstinitial"``` Users whose first name starts with $firstinitial
-  - string ```"lastinitial"``` Users whose last name starts with $lastinitial
-  - string ```"page"``` The page or records to return
-  - string ```"limit"``` The number of records to return per page
   - string ```"fields"``` A comma separated list of fields to be returned from the chosen table.
-
-
-Available URL parameters:
-  - ```/count``` - return number of users (based on filters from request body) 
-  - ```/online``` - return online users (check for access for last 5 minutes)
 
 #### ```[POST request]```
 Not implemented yet.
 
+### Endpoint ```/users/count```
+#### ```[GET request]```
+Return number of all Moodle users.
+
+### Endpoint ```/users/online```
+#### ```[GET request]```
+Return number of online users (by default for last 5 minutes).
+
+Example:  ```/users/online?timeStart=1716796022&timeEnd=1716796044```.
+
+Available parameters:
+- timestamp ```"timeStart"``` Last access user in greater then timeStart.
+- timestamp ```"timeEnd"``` Last access user is lower then timeEnd.
+If both parameters provided, return online users between timeStart and timeEnd.
 
 ### Endpoint ```/user```
 #### ```[GET request]```
-Return details for selected user
-Filter can be provided in request body.
-Please use just one of filters provided in example (```"id"``` or ```"username"``` or ```"email"```)
-    - request body example
-```json
-{
-    "data": {
-        "id": 123,
-        "username": "user123",
-        "upn": "user@domain.com"
-        }
-}
-```
+Return details for selected user. Filter can be provided in parameters.
+Please use JUST ONE of filters provided in example (```"id"``` or ```"username"``` or ```"email"``` or ```"upn"```)
+
+Examples:
+- ```/user?id=1234```
+- ```/user?username=abcd```
+- ```/user?upn=abcd```
+- ```/user?email=sample@email.com```
+
 #### ```[POST request]```
 Not implemented yet.
 
 
 ### Endpoint ```/plugins```
 #### ``` [GET request]```
-Return list of all moodle plugins
-Filters can be provided in URL parmeters.
+Return list of all moodle plugins. Display options can be provided in URL parmeters.
+Examples:
+- ```/plugins?displayupdates```
+- ```/plugins?displayupdateslog```
+- ```/plugins?displayupdates&displayupdateslog```
 
-Available URL parameters:
-  - ```/contrib``` - return list of contrib plugins (manually installed plugins, not core plugins)
-  - ```/updates``` - return list of plugins which has available updates
-  - ```/contrib/updates``` - return list of contrib plugins which has available updates
+Available parameters:
+- bool ```"displayupdates"``` Display plugins updates.
+- bool ```"displayupdateslog"``` Display plugins updates log.
 
+### Endpoint ```/plugins/updates```
 #### ```[POST request]```
-Not implemented yet.
-
-
-### Endpoint ```/plugin```
-#### ```[GET request]```
-Return details for selected plugin
-Please use component name (frankenstyle) of selected plugin (see example)
- - request body example
+Install updates provided in request body.
+- request body example
 ```json
 {
     "data": {
-        "plugin": "theme_boost"
+      "updates": [
+        {
+          "model_id": 1234,
+          "component": "theme_learnr",
+          "version": "2024021300",
+          "release": "4.3.3",
+          "download" : "https://moodle.org/plugins/download.php/31128/theme_learnr_moodle43_2024021300.zip"
+        },
+        {
+          "model_id": 1234,
+          "component": "theme_learnr",
+          "version": "2024021300",
+          "release": "4.3.3",
+          "download" : "https://moodle.org/plugins/download.php/31128/theme_learnr_moodle43_2024021300.zip"
         }
+     ]
+   }
 }
 ```
-- Available URL parameters:
-  - ```/config``` - return list of current config for selected plugin.
+
+### Endpoint ```/plugins/installzip```
+#### ```[POST request]```
+Install plugins from zip files, provided in request body.
+- request body example
+```json
+{
+  "data": {
+    "updates": [
+      "https://moodle.org/plugins/download.php/31629/theme_adaptable_moodle43_2023111805.zip",
+      "https://link2.zip",
+      "neki neveljavni link"
+    ]
+  }
+}
+```
+
+### Endpoint ```/plugin```
+#### ```[GET request]```
+Return information for selected plugin. Please use component name (frankenstyle) for selected plugin (see example)
+Example:
+- ```/plugin?plugin=theme_boost```
+- ```/plugin?plugin=theme_boost&displayupdates```
+- ```/plugin?plugin=theme_boost&displayupdateslog```
+- ```/plugin?plugin=theme_boost&displayconfig```
+- ```/plugin?plugin=theme_boost&displayupdates&displayupdateslog&displayconfig```
+
+- Required parameter:
+- string ```"plugin"``` Plugin name.
+
+Optional parameters:
+- bool ```"displayupdates"``` Display plugin available updates.
+- bool ```"displayupdateslog"``` Display plugin updates log.
+- bool ```"displayconfig"``` Display plugin current config values.
 
 #### ```[POST request]```
 Not implemented yet.

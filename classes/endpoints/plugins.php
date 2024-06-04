@@ -62,7 +62,7 @@ class plugins extends endpoint implements endpoint_interface {
                 $this->reset_updated();;
 
                 switch ($path) {
-                    case 'plugins/update':
+                    case 'plugins/updates':
                         $this->post_update();
                         break;
                     case 'plugins/installzip':
@@ -88,20 +88,22 @@ class plugins extends endpoint implements endpoint_interface {
     private function get_plugins() {
         global $DB;
 
+        $parameters = $this->request->parameters;
+        $displayupdates = false;
+        $displayupdateslog = false;
+
+        if (isset($parameters->displayupdates)) {
+            $displayupdates = true;
+        }
+        if (isset($parameters->displayupdateslog)) {
+            $displayupdateslog = true;
+        }
+
         $pluginman = core_plugin_manager::instance();
         $updateschecker = checker::instance();
         $availableupdates = $pluginman->available_updates();
 
         $lastcheck = $updateschecker->get_last_timefetched();
-
-        $path = $this->request->path;
-        if ($path == 'plugins/updates') {
-            $displayupdates = true;
-
-
-        } else {
-            $displayupdates = false;
-        }
 
         $this->response->add_body_key('last_check_for_updates', $lastcheck);
 
@@ -130,61 +132,14 @@ class plugins extends endpoint implements endpoint_interface {
                         'directory' => $plugin->get_dir(),
                 ];
 
+                // Available updates.
                 if ($displayupdates) {
-                    $pluginavailableupdates = null;
-                    if ($hasupdates) {
-                        $pluginupdates = $updateschecker->get_update_info($plugin->component);
-                        if ($pluginupdates) {
-                            $updates = [];
-                            foreach ($pluginupdates as $pluginupdate) {
-                                $pluginupdate->type = 'plugin';
-                                $updates[] = $pluginupdate;
-                            }
-                            $pluginavailableupdates = $updates;
-                        }
-                        $plugininfo['update_available'] = $pluginavailableupdates;
-                    }
+                    $plugininfo['update_available'] = $this->get_plugin_updates($plugin);
+                }
 
-                    // Updates history.
-                    $updatelogs = $DB->get_records('upgrade_log', ['plugin' => $plugin->component], 'id DESC');
-
-                    $logs = null;
-
-                    foreach ($updatelogs as $updatelog) {
-
-                        $info = $updatelog->info;
-                        $filter1 = strpos($info, 'Starting');
-
-                        if (is_numeric($filter1)) {
-                            continue;
-                        }
-
-                        $filter2 = strpos($info, 'savepoint reached');
-                        if (is_numeric($filter2)) {
-                            continue;
-                        }
-
-                        $username = null;
-                        $email = null;
-                        $updatelog->userid = (int)$updatelog->userid;
-
-                        if ($updatelog->userid > 0) {
-                            $user = core_user::get_user($updatelog->userid);
-                            if ($user) {
-                                $username = $user->username;
-                                $email = $user->email;
-                            }
-                        } else {
-                            $updatelog->userid = null;
-                        }
-                        $updatelog->id = (int)$updatelog->id;
-                        $updatelog->type = (int)$updatelog->type;
-                        $updatelog->timemodified = (int)$updatelog->timemodified;
-                        $updatelog->username = $username;
-                        $updatelog->email = $email;
-                        $logs[] = (array) $updatelog;
-                    }
-                    $plugininfo['update_log'] = $logs;
+                // Updates history.
+                if ($displayupdateslog) {
+                    $plugininfo['update_log'] = $this->get_plugin_updates_log($plugin);
                 }
 
                 $data['plugins'][] = $plugininfo;
@@ -316,5 +271,67 @@ class plugins extends endpoint implements endpoint_interface {
 
     private function increase_updated() {
         $this->countupdated++;
+    }
+
+    private function get_plugin_updates($plugin) {
+        $updates = [];
+
+        $updateschecker = checker::instance();
+
+        $pluginupdates = $updateschecker->get_update_info($plugin->component);
+        if ($pluginupdates) {
+            $data = [];
+            foreach ($pluginupdates as $pluginupdate) {
+                $pluginupdate->type = 'plugin';
+                $updates[] = $pluginupdate;
+            }
+        }
+        return  $updates;
+    }
+
+    private function get_plugin_updates_log($plugin) {
+        global $DB;
+
+        $updatelogs = $DB->get_records('upgrade_log', ['plugin' => $plugin->component], 'id DESC');
+
+        $logs = [];
+
+        foreach ($updatelogs as $updatelog) {
+
+            $info = $updatelog->info;
+            $filter1 = strpos($info, 'Starting');
+
+            if (is_numeric($filter1)) {
+                continue;
+            }
+
+            $filter2 = strpos($info, 'savepoint reached');
+            if (is_numeric($filter2)) {
+                continue;
+            }
+
+            $username = null;
+            $email = null;
+            $updatelog->userid = (int)$updatelog->userid;
+
+            if ($updatelog->userid > 0) {
+                $user = core_user::get_user($updatelog->userid);
+                if ($user) {
+                    $username = $user->username;
+                    $email = $user->email;
+                }
+            } else {
+                $updatelog->userid = null;
+            }
+            $updatelog->id = (int)$updatelog->id;
+            $updatelog->type = (int)$updatelog->type;
+            $updatelog->timemodified = (int)$updatelog->timemodified;
+            $updatelog->username = $username;
+            $updatelog->email = $email;
+            $logs[] = (array) $updatelog;
+        }
+
+
+        return $logs;
     }
 }
