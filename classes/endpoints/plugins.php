@@ -259,10 +259,10 @@ class plugins extends endpoint implements endpoint_interface {
             if ($report['status']) {
                 $this->increase_updated();
             }
-            $updates[][$key] = $report;
+            //$updates[][$key] = $report;
         }
 
-        $this->response->add_body_key("updates", $updates);
+        $this->response->add_body_key("updates", $reports);
     }
 
     private function reset_updated() {
