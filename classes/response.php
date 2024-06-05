@@ -125,7 +125,7 @@ class response {
                 $body = json_encode($this->body);
                 break;
             case 'xml':
-                $body = [];
+                $body = $this->body;
                 break;
             default:
                 $body = 'Unknown response format';
