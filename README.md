@@ -50,7 +50,6 @@ Request body example 1 (fixed date)
 }
 ```
 
-
 ### Endpoint ```/users```
 #### ```[GET request]```
 Return list of all Moodle users.
@@ -180,3 +179,7 @@ Return:
 
 #### ```[POST request]```
 Not implemented yet.
+
+### Endpoint ```/admin_presets```
+#### ```[GET request]```
+Return xml configuration export for Moodle core and all installed plugins.
