@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Language file for plugin moopanel, EN.
+ * Event observers used in theme mtul_slim.
  *
- * File         local_moopanel.php
+ * File         observer.php
  * Encoding     UTF-8
  *
  * @package     local_moopanel
@@ -27,19 +27,21 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-// DEFAULT.
-$string['pluginname'] = 'MooPanel';
+namespace local_moopanel;
 
-// Settings page.
-$string['label:apienabled'] = 'API enabled';
-$string['label:apienabled_help'] = 'Enable or disable API requests.';
-$string['label:moopanelurl'] = 'Moopanel APP URL';
-$string['label:moopanelurl_help'] = 'Enter url address for Moopanel Aplication, without / at the end.';
-$string['label:apikey'] = 'API KEY';
-$string['label:apikey_help'] = 'Enter valid API KEY you got from MooPanel application.';
-$string['label:iprestrict'] = 'IP restriction';
-$string['label:iprestrict_help'] = 'Enter IP addresses from which API can be used. Separate by new line.';
+use tool_admin_presets\event\preset_exported;
 
+/**
+ * Event observer for theme_mtul_slim.
+ */
+class observer {
 
-// Tasks.
-$string['task:adminpresetscreate'] = 'Create a new admin preset - Moopanel';
+    public static function preset_created(preset_exported $event) {
+        global $DB;
+
+        $data = $event->get_data();
+
+        $a = 2;
+
+    }
+}

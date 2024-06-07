@@ -32,6 +32,8 @@ namespace local_moopanel\endpoints;
 use core_adminpresets\manager;
 use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
+use local_moopanel\task\admin_presets_create;
+use local_moopanel\util\admin_presets_manager;
 
 class admin_presets extends endpoint implements endpoint_interface {
 
@@ -51,106 +53,44 @@ class admin_presets extends endpoint implements endpoint_interface {
     }
 
     private function get_admin_preset() {
+        global $CFG;
 
-        $action = 'base';
-        $classname = 'tool_admin_presets\\local\\action\\'.$action;
+        $adminpresetsmanager = new admin_presets_manager();
 
-        if (!class_exists($classname)) {
+        $pluginexist = $adminpresetsmanager->plugin_exist();
+        if (!$pluginexist) {
             $this->response->send_error(STATUS_400, 'Bad Request - Admin presets not found.');
         }
 
-        $preset = $this->admin_preset_exist();
+        // If presets already exist, we must delete it.
 
+        $preset = $adminpresetsmanager->presets_get('Moopanel');
         if ($preset) {
-            // Preset already exist, we must delete it.
-            $this->admin_preset_delete($preset);
+            $adminpresetsmanager->presets_delete($preset);
         }
 
-        // Create new admin preset.
-        $preset = $this->admin_preset_create();
+        // Define adhoc task for create new admin presets.
+        $customdata = [
+                'hostname' => $this->request->hostname,
+                'instanceid' => 1234,
+        ];
+        $task = new admin_presets_create();
+        $task->set_custom_data((object)$customdata);
 
-        if (!$preset) {
-            $this->response->send_error(STATUS_400, 'Problem while creating preset.');
-        }
+        // Set run task ASAP.
+        $now = new \DateTime();
+        $timestamp = $now->getTimestamp();
+        $task->set_next_run_time($timestamp + 1);
 
-        $presetdata = $this->admin_preset_download($preset);
+        \core\task\manager::queue_adhoc_task($task, true);
 
-        $xml = $presetdata[0] ?? false;
+        $this->response->add_body_key('status', 'Admin presets creation in progress');
 
-        if (!$xml) {
-            $this->response->send_error(STATUS_400, 'Invalid preset xml content.');
-        }
-
+        /*
         $this->response->set_format('xml');
         $this->response->add_header('Content-Type', 'application/xml');
         $this->response->set_body($xml);
-    }
-
-    private function admin_preset_exist() {
-        global $DB;
-
-        $conditions = [
-                'name' => 'Moopanel',
-        ];
-
-        $exist = $DB->record_exists('adminpresets', $conditions);
-
-        if (!$exist) {
-            return false;
-        }
-
-        $presetrecord = $DB->get_record('adminpresets', $conditions);
-
-        return $presetrecord->id;
-    }
-
-    private function admin_preset_create() {
-        global $USER, $DB, $PAGE;
-
-        $USER = $DB->get_record('user', ['id' => 2]);
-        $PAGE->set_context(\context_system::instance());
-
-        $manager = new manager();
-
-        $data = new \stdClass();
-        $data->name = 'Moopanel';
-        $data->comments = [
-                'text' => 'Preset created for MooPanel application.',
-                'format' => "1",
-        ];
-        $data->userid = 2;
-        $data->author = 'Moopanel App';
-        $data->includesensiblesettings = "1";
-
-        $preset = $manager->export_preset($data);
-
-        return $preset[0] ?? false;
-    }
-
-    private function admin_preset_delete($preseid) {
-        $manager = new manager();
-        $manager->delete_preset($preseid);
-    }
-
-    private function admin_preset_download($presetid) {
-        global $USER, $CFG, $DB, $PAGE;
-
-        $user = $DB->get_record('user', ['id' => 2]);
-        \core\session\manager::login_user($user);
-
-
-        // Include needle library.
-        require_once($CFG->dirroot.'/backup/util/xml/output/xml_output.class.php');
-        require_once($CFG->dirroot.'/backup/util/xml/output/memory_xml_output.class.php');
-        require_once($CFG->dirroot.'/backup/util/xml/xml_writer.class.php');
-
-        $PAGE->set_context(\context_system::instance());
-
-        $manager = new manager();
-
-        $preset = $manager->download_preset($presetid);
-
-        return $preset;
+        */
     }
 
     private function post_request() {

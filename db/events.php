@@ -15,31 +15,25 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Language file for plugin moopanel, EN.
+ * Event handler.
  *
- * File         local_moopanel.php
+ * File         events.php
  * Encoding     UTF-8
  *
- * @package     local_moopanel
+ * @package     local_moopaner
  *
  * @copyright   Agiledrop, 2024
  * @author      Agiledrop 2024 <hello@agiledrop.com>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-// DEFAULT.
-$string['pluginname'] = 'MooPanel';
+defined('MOODLE_INTERNAL') || die();
 
-// Settings page.
-$string['label:apienabled'] = 'API enabled';
-$string['label:apienabled_help'] = 'Enable or disable API requests.';
-$string['label:moopanelurl'] = 'Moopanel APP URL';
-$string['label:moopanelurl_help'] = 'Enter url address for Moopanel Aplication, without / at the end.';
-$string['label:apikey'] = 'API KEY';
-$string['label:apikey_help'] = 'Enter valid API KEY you got from MooPanel application.';
-$string['label:iprestrict'] = 'IP restriction';
-$string['label:iprestrict_help'] = 'Enter IP addresses from which API can be used. Separate by new line.';
-
-
-// Tasks.
-$string['task:adminpresetscreate'] = 'Create a new admin preset - Moopanel';
+// List of observers.
+$observers = [
+    // Admin presets events.
+        [
+                'eventname' => '\tool_admin_presets\event\preset_exported',
+                'callback'  => '\local_moopanel\observer::preset_created',
+        ],
+];
