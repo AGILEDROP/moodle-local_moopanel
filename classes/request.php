@@ -34,6 +34,8 @@ namespace local_moopanel;
  */
 class request {
 
+    public $hostname;
+
     public $method;
 
     public $headers;
@@ -50,6 +52,14 @@ class request {
         $this->path = '';
         $this->parameters = [];
         $this->payload = [];
+    }
+
+    public function set_hostname($hostname) {
+        $this->hostname = $hostname;
+    }
+
+    public function get_hostname() {
+        return $this->hostname;
     }
 
     public function set_method($method) {

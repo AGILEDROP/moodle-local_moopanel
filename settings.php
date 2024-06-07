@@ -42,6 +42,14 @@ if ($hassiteconfig) {
            ''
     ));
 
+    // Moopanel app wwwroot.
+    $settings->add(new admin_setting_configtext(
+            'local_moopanel/moopanelurl',
+            get_string('label:moopanelurl', 'local_moopanel'),
+            get_string('label:moopanelurl_help', 'local_moopanel'),
+            ''
+    ));
+
     // API key.
     $settings->add(new admin_setting_configtext(
             'local_moopanel/apikey',
