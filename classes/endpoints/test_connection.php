@@ -29,6 +29,7 @@
 
 namespace local_moopanel\endpoints;
 
+use context_system;
 use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
 
@@ -41,7 +42,7 @@ class test_connection extends endpoint implements endpoint_interface {
     public function execute_request() {
         global $CFG, $SITE, $THEME, $PAGE;
 
-        $PAGE->set_context(\context_system::instance());
+        $PAGE->set_context(context_system::instance());
         $renderer = $PAGE->get_renderer('core');
 
         $logourl = $renderer->get_logo_url(300, 300);
