@@ -31,6 +31,7 @@ namespace local_moopanel\util;
 
 use core_adminpresets\manager;
 use core_user;
+use DateTime;
 
 class admin_presets_manager {
 
@@ -82,10 +83,13 @@ class admin_presets_manager {
 
         $manager = new manager();
 
+        $date = new DateTime();
+        $now = $date->format('H:i:s - d.m.Y');
+
         $data = new \stdClass();
         $data->name = 'Moopanel';
         $data->comments = [
-                'text' => 'Preset created for MooPanel application.',
+                'text' => 'Preset for MooPanel application created on ' . $now,
                 'format' => "1",
         ];
         $data->userid = 2;

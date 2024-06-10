@@ -188,17 +188,25 @@ class plugins extends endpoint implements endpoint_interface {
                 $versionrequest = (int)$update->version;
 
                 if ($versionrequest == $versioncurrent) {
-                    $msg = 'Update already installed.';
+                    $data[] = [
+                            $update->model_id => [
+                                    'status' => true,
+                                    'component' => $update->component,
+                                    'error' => 'Update already installed.',
+                            ],
+                    ];
+
                 } else {
-                    $msg = 'Update not found.';
+                    $data[] = [
+                            $update->model_id => [
+                                    'status' => false,
+                                    'component' => $update->component,
+                                    'error' => 'Update not found.',
+                            ],
+                    ];
+
                 }
-                $data[] = [
-                    $update->model_id => [
-                        'status' => false,
-                        'component' => $update->component,
-                        'error' => $msg,
-                    ],
-                ];
+
                 continue;
             }
 
@@ -281,9 +289,16 @@ class plugins extends endpoint implements endpoint_interface {
         $pluginupdates = $updateschecker->get_update_info($plugin->component);
         if ($pluginupdates) {
             $data = [];
+            $oldversion = $plugin->versiondisk;
             foreach ($pluginupdates as $pluginupdate) {
-                $pluginupdate->type = 'plugin';
-                $updates[] = $pluginupdate;
+                $newversion = $pluginupdate->version;
+                if ($newversion > $oldversion) {
+                    $pluginupdate->type = 'plugin';
+                    $updates[] = $pluginupdate;
+                }
+                else {
+                    $a = 2;
+                }
             }
         }
         return  $updates;

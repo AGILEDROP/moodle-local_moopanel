@@ -41,25 +41,11 @@ class api_key_status extends endpoint implements endpoint_interface {
     public function execute_request() {
         switch ($this->request->method) {
             case 'POST':
-                $this->update_api_key($this->request->payload);
-                break;
-
-            case 'GET':
-                $this->get_api_key_expiration();
-                break;
-        }
-    }
-
-    public function process_request($requestmethod, $requestparameters, $payload = null, $responsetype = null) {
-        global $CFG, $SITE, $THEME, $PAGE;
-
-        switch ($requestmethod) {
-            case 'POST':
                 $this->update_api_key();
                 break;
 
             case 'GET':
-                $this->get_api_key_expiration();
+                $this->get_api_key_info();
                 break;
         }
     }
@@ -67,20 +53,36 @@ class api_key_status extends endpoint implements endpoint_interface {
     private function update_api_key() {
         $now = time();
 
-        if (isset($this->request->payload->key_expiration_date)) {
-            $timestamp = $this->request->payload->key_expiration_date;
+        $payload = $this->request->payload;
+
+        if (object_property_exists($payload, 'key_expiration_date')) {
+
+            $expiration = $payload->key_expiration_date;
+
+            if ($expiration == null) {
+                $timestamp = 'permanent';
+            } else {
+                $timestamp = $expiration;
+            }
+
             set_config('key_expiration_date', $timestamp, 'local_moopanel');
             $this->response->set_status(STATUS_201);
-            $this->response->add_body_key('status', 'Api key updated');
+            $this->response->add_body_key('status', true);
             $this->response->add_body_key('key_expiration_date', $timestamp);
         } else {
             $this->response->send_error(STATUS_400, 'Missing API key expiration_date');
         }
     }
 
-    private function get_api_key_expiration() {
+    private function get_api_key_info() {
         $timestamp = get_config('local_moopanel', 'key_expiration_date');
-        $expirationdate = date('m/d/Y H:i:s', $timestamp);
+
+        if ($timestamp == 'permanent') {
+            $expirationdate = null;
+        } else {
+            $expirationdate = date('m/d/Y H:i:s', $timestamp);
+        }
+
         $this->response->add_body_key('key_expiration_date', $expirationdate);
     }
 }

@@ -70,18 +70,6 @@ class users extends endpoint implements endpoint_interface {
         $fields = $parameters->fields ?? '*';
         $sort = $parameters->sort ?? 'lastname ASC';
 
-        /*
-        $search = (isset($payload->search)) ? $payload->search : '';
-        $confirmed = (isset($payload->confirmed)) ? $payload->confirmed : false;
-        $ignoreids = (isset($payload->ignoreids)) ? $payload->ignoreids : null;
-        $sort = (isset($payload->sort)) ? $payload->sort : 'firstname ASC';
-        $firstinitial = (isset($payload->firstinitial)) ? $payload->firstinitial : '';
-        $lastinitial = (isset($payload->lastinitial)) ? $payload->lastinitial : '';
-        $page = (isset($payload->page)) ? $payload->page : '';
-        $limit = (isset($payload->limit)) ? $payload->limit : 9999999999;
-        $fields = (isset($payload->fields)) ? $payload->fields : '*';
-      */
-
         $data = [];
         $users = get_users($count, $search, false, null, $sort, '', '', '', '', $fields);
 
@@ -94,22 +82,7 @@ class users extends endpoint implements endpoint_interface {
             $this->response->add_body_key('users', null);
             return;
         }
-/*
-        if ($fields == '*') {
-            foreach ($users as $user) {
-                $data['users'][] = [
-                    'id' => $user->id,
-                    'username' => $user->username,
-                    'firstname' => $user->firstname,
-                    'lastname' => $user->lastname,
-                ];
-            }
-        } else {
-            foreach ($users as $user) {
-                $data['users'][] = $user;
-            }
-        }
-*/
+
         foreach ($users as $user) {
             $data['users'][] = $user;
         }
