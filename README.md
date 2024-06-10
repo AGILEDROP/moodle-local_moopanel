@@ -22,9 +22,6 @@ By default, all responses are in ``` json ``` format.
  
 ```http
 GET / 
-```
-
-```http
 GET /test_connection
 ```
 Return response with basic information about Moodle installation. No parameters needed.
@@ -83,9 +80,15 @@ POST /api_key_status
 ```
 Update existing API key.
 #### Request body parameters
-| Parameter | Type                 | Description                                                        |
-| :--- |:---------------------|:-------------------------------------------------------------------|
+| Parameter             | Type                 | Description                                                        |
+|:----------------------|:---------------------|:-------------------------------------------------------------------|
 | `key_expiration_date` | `timestamp` \ `null` | **Required**. Validation end date timestamp or null for permanent. |
+
+#### Possible response errors
+| Status code | Status        | Message                          |
+|:------------|:--------------|:---------------------------------|
+| `400`       | `bad request` | Missing API key expiration_date. |
+
 
 #### Request body example 1 (fixed date)
 ```json
@@ -118,8 +121,8 @@ GET /users
 ```
 Return list of all Moodle users with all available fields if no parameters provided.
 #### Available parameters
-| Parameter | Type | Description                                                                          | Example                       |
-|:----------| :--- |:-------------------------------------------------------------------------------------|:------------------------------|
+| Parameter | Type     | Description                                                                          | Example                       |
+|:----------|:---------|:-------------------------------------------------------------------------------------|:------------------------------|
 | `search`  | `string` | **Optional**. A simple string to search for users.                                   | ?search=abc                   |
 | `sort`    | `string` | **Optional**. A SQL snippet for the sorting criteria to use.                         | ?sort=firstname               |
 | `fields`  | `string` | **Optional**. A comma separated list of fields to be returned from the chosen table. | ?fields=id,firstname,lastname |
@@ -156,10 +159,15 @@ Return number of online users. If no parameters provided, get online users for l
 If both parameters provided, return online users between timeStart and timeEnd.
 
 #### Available parameters
-| Parameter   | Type        | Description                                            | Example     |
-|:------------|:------------|:-------------------------------------------------------|:------------|
+| Parameter   | Type        | Description                                            | Example               |
+|:------------|:------------|:-------------------------------------------------------|:----------------------|
 | `timeStart` | `timestamp` | **Optional**. User last access greater than timeStart. | ?timeStart=1716796022 |
 | `timeEnd`   | `timestamp` | **Optional**. User last access lower then timeEnd.     | ?timeEnd=1716796022   |
+
+#### Possible response errors
+| Status code | Status        | Message                              |
+|:------------|:--------------|:-------------------------------------|
+| `400`       | `bad request` | StartTime must be less than endTime. |
 
 #### Example request
 ```http
@@ -189,13 +197,19 @@ Return number of all Moodle users. No parameters needed.
 #### ```[GET request]```
 Return details for selected user. Filter can be provided in parameters. One of available parameters ins required.
 
-#### Avaipable parameters
+#### Available parameters
 | Parameter  | Type      | Description                | Example                 |
 |:-----------|:----------|:---------------------------|:------------------------|
 | `id`       | `integer` | Id of selected user.       | ?id=1234                |
 | `username` | `string`  | Username of selected user. | ?username=user123       |
 | `upn`      | `string`  | Upn of selected user.      | ?upn=user123            |
 | `email`    | `email`   | Email of selected user.    | ?email=user@example.com |
+
+#### Possible response errors
+| Status code | Status        | Message                 |
+|:------------|:--------------|:------------------------|
+| `400`       | `bad request` | No parameters provided. |
+| `400`       | `bad request` | User not found.         |
 
 #### Examples request: 
 ```http
@@ -225,9 +239,9 @@ GET /plugins
 Return list of all moodle plugins. Display options can be provided via parameters. Parameters are like flags, no need for special values.
 
 #### Available parameters
-| Parameter | Type   | Description                                              |
-| :--- |:-------|:---------------------------------------------------------|
-| `displayupdates` | `flag` | **Optional**. Display available updates for each plugin. |
+| Parameter           | Type   | Description                                              |
+|:--------------------|:-------|:---------------------------------------------------------|
+| `displayupdates`    | `flag` | **Optional**. Display available updates for each plugin. |
 | `displayupdateslog` | `flag` | **Optional**. Display updates log for each plugin.       |
 
 ### Exaples reqest:
@@ -292,6 +306,11 @@ POST /plugins/updates
 ```
 Install plugin updates provided in request body.
 
+#### Possible response errors
+| Status code | Status        | Message               |
+|:------------|:--------------|:----------------------|
+| `400`       | `bad request` | No updates specified. |
+
 #### Example request body
 ```json
 {
@@ -343,6 +362,11 @@ POST /plugins/installzip
 ```
 Install plugins from zip files, provided in request body.
 
+#### Possible response errors
+| Status code | Status        | Message                      |
+|:------------|:--------------|:-----------------------------|
+| `400`       | `bad request` | No zip files urls specified. |
+
 #### Example request body
 ```json
 {
@@ -379,13 +403,19 @@ GET /plugin
 ```
 Return detailed information for selected plugin. Please use component name (frankenstyle) for selected plugin (see example)
 
-#### Apailable parameters
+#### Available parameters
 | Parameter           | Type      | Description                              | Example            |
 |:--------------------|:----------|:-----------------------------------------|:-------------------|
 | `plugin`            | `integer` | **Required**. Plugin component name..    | ?plugin=theme_mtul |
 | `displayupdates`    | `flag`    | **Optional**. Display available updates. | ?displayupdates    |
 | `displayupdateslog` | `flag`    | **Optional**. Display updates log.       | ?displayupdateslog |
 | `displayconfig`     | `flag`    | **Optional.**. Display current config.   | ?displayconfig     |
+
+#### Possible response errors
+| Status code | Status        | Message               |
+|:------------|:--------------|:----------------------|
+| `400`       | `bad request` | Plugin not specified. |
+| `400`       | `bad request` | Plugin not exist.     |
 
 #### Example request:
 ```http
@@ -439,7 +469,7 @@ GET /plugin?plugin=theme_mtul&displayupdates&displayupdateslog&displayconfig
         "logocompact": "/UL_AGRFT_logoHOR-RGB_barv.svg",
         "preset": "default.scss",
         "summaryheight": "50px",
-        "welcome_message_en": "Welcome in English language.",
+        "welcome_message_en": "Welcome in English language."
     }
 }
 ```
@@ -473,9 +503,16 @@ Create request for generate admin presets xml configuration export for Moodle co
 Return status for accepted request and then make ```post``` request to Moopanel app when xml is generated. 
 
 #### Available parameters
-| Parameter    | Type      | Description                                          |Example|
-|:-------------|:----------|:-----------------------------------------------------|:--|
-| `instanceid` | `integer` | **Required**. Id of Moodle instance page in Moopanel | ?instanceid=1234|
+| Parameter    | Type      | Description                                          | Example          |
+|:-------------|:----------|:-----------------------------------------------------|:-----------------|
+| `instanceid` | `integer` | **Required**. Id of Moodle instance page in Moopanel | ?instanceid=1234 |
+
+#### Possible response errors
+| Status code | Status                | Message                                |
+|:------------|:----------------------|:---------------------------------------|
+| `501`       | `not implemented`     | Admin presets plugin not found.        |
+| `503`       | `service unavailable` | Service Unavailable - try again later. |
+| `403`       | `bad request`         | Please provide a valid instance ID.    |
 
 #### Example request
 ```http
@@ -489,4 +526,7 @@ GET /admin_presets?instanceid=1234
     "message": "Admin presets creation in progress"
 }
 ```
+#### ToDo
+- [ ] send POST request custom headers (status )
+- [ ] send POST request custom headers (X-API-KEX )
 

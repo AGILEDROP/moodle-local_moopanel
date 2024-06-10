@@ -114,7 +114,7 @@ class users extends endpoint implements endpoint_interface {
 
         // Validation.
         if ($start > $end) {
-            $this->response->send_error(400, 'Invalid start time');
+            $this->response->send_error(400, 'StartTime must be less than endTime.');
         }
 
         $sql = "SELECT username, firstname, lastname FROM {user} WHERE lastaccess >= :fromtime AND lastaccess < :totime";

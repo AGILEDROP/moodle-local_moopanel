@@ -29,7 +29,6 @@
 
 namespace local_moopanel\endpoints;
 
-use core_adminpresets\manager;
 use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
 use local_moopanel\task\admin_presets_create;
@@ -59,7 +58,7 @@ class admin_presets extends endpoint implements endpoint_interface {
 
         $pluginexist = $adminpresetsmanager->plugin_exist();
         if (!$pluginexist) {
-            $this->response->send_error(STATUS_400, 'Bad Request - Admin presets plugin not found.');
+            $this->response->send_error(STATUS_501, 'Not implemented - Admin presets plugin not found.');
         }
 
         // If presets already exist, we must delete it.
@@ -82,15 +81,13 @@ class admin_presets extends endpoint implements endpoint_interface {
         $timestamp = $now->getTimestamp();
         $task->set_next_run_time($timestamp + 1);
 
-        \core\task\manager::queue_adhoc_task($task, true);
+        $taskcreated = \core\task\manager::queue_adhoc_task($task, true);
 
-        $this->response->add_body_key('status', true);
-        $this->response->add_body_key('message', 'Admin presets creation in progress');
-
-        /*
-        $this->response->set_format('xml');
-        $this->response->add_header('Content-Type', 'application/xml');
-        $this->response->set_body($xml);
-        */
+        if ($taskcreated) {
+            $this->response->add_body_key('status', true);
+            $this->response->add_body_key('message', 'Admin presets creation in progress');
+        } else {
+            $this->response->send_error(STATUS_503, 'Service Unavailable - try again later.');
+        }
     }
 }

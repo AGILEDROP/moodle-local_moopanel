@@ -64,7 +64,8 @@ define('STATUS_500', 500);
 // 501 = Not implemented.
 define('STATUS_501', 501);
 
-
+// 503 = Service Unavailable.
+define('STATUS_503', 503);
 /**
  * MooPanel API definition class.
  */

@@ -157,7 +157,7 @@ class plugins extends endpoint implements endpoint_interface {
 
         $updates = $this->request->payload->updates;
         if (empty($updates)) {
-            $this->response->send_error(STATUS_400, 'Bad request - empty updates.');
+            $this->response->send_error(STATUS_400, 'Bad request - no updates specified.');
         }
 
         $pluginmanager = new plugin_manager();
@@ -249,7 +249,7 @@ class plugins extends endpoint implements endpoint_interface {
         $pluginmanager = new plugin_manager();
 
         if (!isset($this->request->payload->updates)) {
-            $this->response->send_error(STATUS_400, 'Bad request - no updates specified.');
+            $this->response->send_error(STATUS_400, 'Bad request - no zip files urls specified.');
         }
 
         $updates = $this->request->payload->updates;
