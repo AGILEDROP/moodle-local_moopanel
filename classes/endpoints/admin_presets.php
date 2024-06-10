@@ -38,28 +38,28 @@ use local_moopanel\util\admin_presets_manager;
 class admin_presets extends endpoint implements endpoint_interface {
 
     public function allowed_methods() {
-        return ['GET', 'POST'];
+        return ['GET'];
     }
 
     public function execute_request() {
-        switch ($this->request->method) {
-            case 'GET':
-                $this->get_admin_preset();
-                break;
-            case 'POST':
-                $this->post_request();
-                break;
-        }
+        $this->get_admin_preset();
     }
 
     private function get_admin_preset() {
         global $CFG;
 
+        $parameters = $this->request->parameters;
+        $instanceid = $this->request->parameters->instanceid ?? false;
+
+        if (!is_numeric($instanceid)) {
+            $this->response->send_error(STATUS_400, 'Bad Request - Please provide a valid instance ID.');
+        }
+
         $adminpresetsmanager = new admin_presets_manager();
 
         $pluginexist = $adminpresetsmanager->plugin_exist();
         if (!$pluginexist) {
-            $this->response->send_error(STATUS_400, 'Bad Request - Admin presets not found.');
+            $this->response->send_error(STATUS_400, 'Bad Request - Admin presets plugin not found.');
         }
 
         // If presets already exist, we must delete it.
@@ -72,7 +72,7 @@ class admin_presets extends endpoint implements endpoint_interface {
         // Define adhoc task for create new admin presets.
         $customdata = [
                 'hostname' => $this->request->hostname,
-                'instanceid' => 1234,
+                'instanceid' => $instanceid,
         ];
         $task = new admin_presets_create();
         $task->set_custom_data((object)$customdata);
@@ -84,16 +84,13 @@ class admin_presets extends endpoint implements endpoint_interface {
 
         \core\task\manager::queue_adhoc_task($task, true);
 
-        $this->response->add_body_key('status', 'Admin presets creation in progress');
+        $this->response->add_body_key('status', true);
+        $this->response->add_body_key('message', 'Admin presets creation in progress');
 
         /*
         $this->response->set_format('xml');
         $this->response->add_header('Content-Type', 'application/xml');
         $this->response->set_body($xml);
         */
-    }
-
-    private function post_request() {
-        $this->response->send_error(STATUS_501, 'Not Implemented yet.');
     }
 }

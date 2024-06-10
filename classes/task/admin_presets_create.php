@@ -49,7 +49,6 @@ class admin_presets_create extends adhoc_task {
 
         if (!$preset) {
             // Send error to moopanel.
-            $a = 'error';
         }
 
         $xml = $manager->preset_get_xml($preset);
