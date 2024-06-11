@@ -14,9 +14,24 @@ Moopanel App provide you an API-key which you must paste into plugin config.
 ## Authorisation
 Moopanel API use API-key authorisation type. Please add ```X-API-KEY``` key and its value to request header.
 
+## General responses
+By default, all responses are in ``` json ``` format. Here is a list of possible responses.
+
+| Status code | Status            | Message                          |
+|:------------|:------------------|:---------------------------------|
+| `200`       | `ok`              | Response contain requested data. |
+| `400`       | `bad request`     | Missing some request details.    |
+| `401`       | `unaothorized`    | Authorization failed.            |
+| `401`       | `unaothorized`    | Authorization key required.      |
+| `404`       | `not found`       | Endpoint not found.              |
+| `405`       | `not allowed`     | Method not allowed.              |
+| `423`       | `locked`          | Api is disabled.                 |
+| `501`       | `not implemented` | Not implemented yet.             |
+
+
 ## Available endpoints
 All endpoints url starts with ```Moodle root url``` + ```/local/moopanel/server.php```.
-By default, all responses are in ``` json ``` format.
+
 
 ### Endpoint ```/``` or ```/test_connection``` 
  
@@ -488,7 +503,7 @@ Return:
 
 ### Endpoint ```/moodle_core/update```
 ```http
-GET /moodle_core
+POST /moodle_core/update
 ```
 Update Moodle Core. Not implemented yet.
 
@@ -503,9 +518,9 @@ Create request for generate admin presets xml configuration export for Moodle co
 Return status for accepted request and then make ```post``` request to Moopanel app when xml is generated. 
 
 #### Available parameters
-| Parameter    | Type      | Description                                          | Example          |
-|:-------------|:----------|:-----------------------------------------------------|:-----------------|
-| `instanceid` | `integer` | **Required**. Id of Moodle instance page in Moopanel | ?instanceid=1234 |
+| Parameter    | Type      | Description                                           | Example          |
+|:-------------|:----------|:------------------------------------------------------|:-----------------|
+| `instanceid` | `integer` | **Required**. Id of Moodle instance page in Moopanel. | ?instanceid=1234 |
 
 #### Possible response errors
 | Status code | Status                | Message                                |

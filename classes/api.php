@@ -58,6 +58,9 @@ define('STATUS_404', 404);
 // 405 = Method not allowed.
 define('STATUS_405', 405);
 
+// 423 = Locked.
+define('STATUS_423', 423);
+
 // 500 = Internal Server Error.
 define('STATUS_500', 500);
 
@@ -95,7 +98,7 @@ class api {
             // Check if API is enabled in Moodle.
             $apienabled = $this->api_enabled();
             if (!$apienabled) {
-                $this->response->send_error(STATUS_403, 'API is disabled.');
+                $this->response->send_error(STATUS_423, 'API is disabled.');
             }
 
             // Get request headers.
@@ -147,7 +150,7 @@ class api {
         // Get API key.
         $apikey = $this->request->get_header('HTTP_X_API_KEY');
         if (!$apikey) {
-            $this->response->send_error(STATUS_401, 'Authorization required.');
+            $this->response->send_error(STATUS_401, 'Authorization key required.');
         }
 
         // Currently just simple check for auth.
@@ -205,7 +208,7 @@ class api {
             // Create endpoint controller.
             $this->endpoint = new $classname();
         } else {
-            $this->response->send_error(STATUS_400, 'Endpoint not found.');
+            $this->response->send_error(STATUS_404, 'Endpoint not found.');
         }
     }
 
