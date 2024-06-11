@@ -136,9 +136,8 @@ class admin_presets_manager {
 
         $apikey = get_config('local_moopanel', 'apikey');
 
-        $authorization = 'Authorization: Bearer ' . $apikey;
-
         $headers = [
+                'X-API-Key: ' . $apikey,
                 'Content-Type: application/xml',
         ];
 
