@@ -32,6 +32,7 @@ namespace local_moopanel\util;
 use core_adminpresets\manager;
 use core_user;
 use DateTime;
+use stdClass;
 
 class admin_presets_manager {
 
@@ -71,8 +72,8 @@ class admin_presets_manager {
             'name' => $presetname,
         ];
 
-        $preset = $this->db->get_record('adminpresets', $conditions);
-        return $preset->id;
+        $presets = $this->db->get_records('adminpresets', $conditions);
+        return $presets;
     }
 
     public function presets_create() {
@@ -84,9 +85,9 @@ class admin_presets_manager {
         $manager = new manager();
 
         $date = new DateTime();
-        $now = $date->format('H:i:s - d.m.Y');
+        $now = $date->format('d.m.Y - H:i:s');
 
-        $data = new \stdClass();
+        $data = new stdClass();
         $data->name = 'Moopanel';
         $data->comments = [
                 'text' => 'Preset for MooPanel application created on ' . $now,
@@ -105,10 +106,6 @@ class admin_presets_manager {
         global $USER, $CFG, $DB, $PAGE;
 
         $USER = \core_user::get_user(2);
-        /*
-        $user = $DB->get_record('user', ['id' => 2]);
-        \core\session\manager::login_user($user);
-        */
 
         // Include needle library.
         require_once($CFG->dirroot.'/backup/util/xml/output/xml_output.class.php');
@@ -131,13 +128,15 @@ class admin_presets_manager {
 
     public function presets_send($url, $instanceid, $xml) {
 
-        $endpoint = $url . '/local/moopanel/pages/test_post.php?instanceid=' . $instanceid;
+        //$endpoint = $url . '/local/moopanel/pages/test_post.php?instanceid=' . $instanceid;
+        $endpoint = $url . '/api/instances/' . $instanceid . '/admin_preset';
+
         $handler = curl_init($endpoint);
 
         $apikey = get_config('local_moopanel', 'apikey');
 
         $headers = [
-                'X-API-Key: ' . $apikey,
+                'X-API-KEY: ' . $apikey,
                 'Content-Type: application/xml',
         ];
 

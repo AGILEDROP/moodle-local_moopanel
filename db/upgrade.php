@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Event handler.
+ * Upgrade script.
  *
- * File         events.php
+ * File         upgrade.php
  * Encoding     UTF-8
  *
  * @package     local_moopanel
@@ -27,13 +27,15 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+function xmldb_local_moopanel_upgrade($oldversion) {
+    $moopanelurl = get_config('local_moopanel', 'moopanelurl');
 
-// List of observers.
-$observers = [
-    // Admin presets events.
-        [
-                'eventname' => '\tool_admin_presets\event\preset_exported',
-                'callback'  => '\local_moopanel\observer::preset_created',
-        ],
-];
+    if (!$moopanelurl) {
+        // ToDo remove line below.
+        $moopanelurl = 'https://mdcenter.uni-lj.si';
+
+        set_config('moopanelurl', $moopanelurl, 'local_moopanel');
+    }
+
+    return true;
+}
