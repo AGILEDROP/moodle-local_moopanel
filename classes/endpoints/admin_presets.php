@@ -29,6 +29,7 @@
 
 namespace local_moopanel\endpoints;
 
+use core\cron;
 use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
 use local_moopanel\task\admin_presets_create;
@@ -45,9 +46,6 @@ class admin_presets extends endpoint implements endpoint_interface {
     }
 
     private function get_admin_preset() {
-        global $CFG;
-
-        $parameters = $this->request->parameters;
         $instanceid = $this->request->parameters->instanceid ?? false;
 
         if (!is_numeric($instanceid)) {
@@ -62,28 +60,28 @@ class admin_presets extends endpoint implements endpoint_interface {
         }
 
         // If presets already exist, we must delete it.
-
-        $preset = $adminpresetsmanager->presets_get('Moopanel');
-        if ($preset) {
-            $adminpresetsmanager->presets_delete($preset);
+        $presets = $adminpresetsmanager->presets_get('Moopanel');
+        if ($presets) {
+            foreach ($presets as $preset) {
+                $adminpresetsmanager->presets_delete($preset->id);
+            }
         }
 
         // Define adhoc task for create new admin presets.
         $customdata = [
-                'hostname' => $this->request->hostname,
-                'instanceid' => $instanceid,
+            'hostname' => $this->request->hostname,
+            'instanceid' => $instanceid,
         ];
         $task = new admin_presets_create();
         $task->set_custom_data((object)$customdata);
 
         // Set run task ASAP.
-        $now = new \DateTime();
-        $timestamp = $now->getTimestamp();
-        $task->set_next_run_time($timestamp + 1);
+        $task->set_next_run_time(time() - 1);
+        \core\task\manager::queue_adhoc_task($task, true);
 
-        $taskcreated = \core\task\manager::queue_adhoc_task($task, true);
+        $taskwillrun = \core\task\manager::get_adhoc_tasks('\local_moopanel\task\admin_presets_create');
 
-        if ($taskcreated) {
+        if ($taskwillrun) {
             $this->response->add_body_key('status', true);
             $this->response->add_body_key('message', 'Admin presets creation in progress');
         } else {

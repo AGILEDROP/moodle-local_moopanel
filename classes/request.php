@@ -54,7 +54,10 @@ class request {
         $this->payload = [];
     }
 
-    public function set_hostname($hostname) {
+    public function set_hostname($hostname = null) {
+        if (!$hostname) {
+            $hostname = get_config('local_moopanel', 'moopanelurl');
+        }
         $this->hostname = $hostname;
     }
 

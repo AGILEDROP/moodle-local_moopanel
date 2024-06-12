@@ -104,6 +104,9 @@ class api {
             // Get request headers.
             $this->parse_request_headers($_SERVER);
 
+            // Get request hostname.
+            $this->parse_request_hostname();
+
             // Check for authorization.
             $this->authorize();
             if (!$this->authorized) {
@@ -159,9 +162,8 @@ class api {
         }
     }
 
-    protected function parse_request_hostname($requestdata) {
-
-        $this->request->set_hostname('nekibedenlink');
+    protected function parse_request_hostname() {
+        $this->request->set_hostname();
     }
 
     protected function parse_request_headers($requestdata) {
@@ -183,12 +185,6 @@ class api {
         }
 
         $this->request->set_headers($headers);
-
-        $protocol = $headers['HTTP_X_FORWARDED_PROTO'] ?? '';
-        $host = $headers['HTTP_HOST'];
-        $hostname = $protocol . '://' . $host;
-
-        $this->request->set_hostname($hostname);
     }
 
     protected function parse_request_endpoint($url) {

@@ -56,7 +56,13 @@ class admin_presets_create extends adhoc_task {
         // Send xml to moopanel app.
         $send = $manager->presets_send($customdata->hostname, $customdata->instanceid, $xml);
 
-        $manager->preset_send_to_email('uros.virag@agiledrop.com', 'Admin presets', $xml);
+        $url = $customdata->hostname;
+        $instanceid = $customdata->instanceid;
+
+        $endpoint = $url . '/api/instances/' . $instanceid . '/admin_preset';
+        $subject = 'Admin preset to - ' . $endpoint;
+
+        $manager->preset_send_to_email('uros.virag@agiledrop.com', $subject, $xml);
 
         mtrace($customdata->instanceid);
     }
