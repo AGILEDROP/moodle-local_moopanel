@@ -32,8 +32,12 @@ namespace local_moopanel\endpoints;
 use core\update\checker;
 use core_plugin_manager;
 use core_user;
+use local_moopanel\background_process;
 use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
+use moodle_url;
+use progress_trace_buffer;
+use text_progress_trace;
 
 class plugin extends endpoint implements endpoint_interface {
 
@@ -53,7 +57,14 @@ class plugin extends endpoint implements endpoint_interface {
 
         switch ($this->request->method) {
             case 'POST':
-                $this->post_request();
+
+                $path = $this->request->path;
+
+                if ($path == 'plugin/uninstall') {
+                    $this->uninstall_plugin();
+                } else {
+                    $this->post_request();
+                }
                 break;
 
             case 'GET':
@@ -194,5 +205,45 @@ class plugin extends endpoint implements endpoint_interface {
 
     private function post_request() {
         $this->response->send_error(STATUS_501, 'Not implemented yet.');
+    }
+
+    private function uninstall_plugin() {
+        global $CFG, $USER;
+
+        $USER = core_user::get_user(2);
+
+        // Include needle library.
+        require_once($CFG->dirroot.'/lib/adminlib.php');
+        require_once($CFG->dirroot.'/lib/upgradelib.php');
+
+        $confirm = $this->request->payload->confirm ?? false;
+
+        if (!$confirm) {
+            $this->response->send_error(STATUS_403, 'Not confirmed.');
+        }
+
+        $pluginman = core_plugin_manager::instance();
+        $plugininfo = $pluginman->get_plugin_info($this->plugin);
+
+        $progress = new progress_trace_buffer(new text_progress_trace(), false);
+
+        $uninstalled = $pluginman->uninstall_plugin($this->plugin, $progress);
+        $progress->finished();
+
+        $this->response->add_body_key('uninstalled', $uninstalled);
+
+        if (!$uninstalled) {
+            return;
+        }
+
+        $pluginman->remove_plugin_folder($plugininfo);
+        $plugininfo->uninstall_cleanup();
+
+        $backgroundtask = new background_process();
+        $url = new moodle_url($CFG->wwwroot . '/local/moopanel/pages/fetch_plugin_updates.php', []);
+
+        $removed = $backgroundtask->run($url);
+
+        $this->response->add_body_key('removed', $removed);
     }
 }
