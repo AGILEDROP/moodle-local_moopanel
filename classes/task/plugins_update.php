@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Language file for plugin moopanel, EN.
+ * Adhoc task class - update specified plugins.
  *
- * File         local_moopanel.php
+ * File         plugins_update.php
  * Encoding     UTF-8
  *
  * @package     local_moopanel
@@ -27,20 +27,19 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-// DEFAULT.
-$string['pluginname'] = 'MooPanel';
+namespace local_moopanel\task;
 
-// Settings page.
-$string['label:apienabled'] = 'API enabled';
-$string['label:apienabled_help'] = 'Enable or disable API requests.';
-$string['label:moopanelurl'] = 'Moopanel APP URL';
-$string['label:moopanelurl_help'] = 'Enter url address for Moopanel Aplication, without / at the end.';
-$string['label:apikey'] = 'API KEY';
-$string['label:apikey_help'] = 'Enter valid API KEY you got from MooPanel application.';
-$string['label:iprestrict'] = 'IP restriction';
-$string['label:iprestrict_help'] = 'Enter IP addresses from which API can be used. Separate by new line.';
+use core\task\adhoc_task;
+
+class plugins_update extends adhoc_task {
+
+    public function get_name() {
+        return get_string('task:pluginsupdate', 'local_moopanel');
+    }
 
 
-// Tasks.
-$string['task:adminpresetscreate'] = 'Moopanel - Create a new admin preset';
-$string['task:pluginsupdate'] = 'Moopanel - Update plugins';
+    public function execute() {
+        // some logic here
+        $a = 2;
+    }
+}

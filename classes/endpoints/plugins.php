@@ -163,6 +163,10 @@ class plugins extends endpoint implements endpoint_interface {
         $pluginmanager = new plugin_manager();
         $pluginman = core_plugin_manager::instance();
 
+
+        $this->response->add_body_key('user_id', 4);
+        $this->response->add_body_key('username', 'test@test.si');
+
         $data = [];
         foreach ($updates as $update) {
 
@@ -170,11 +174,10 @@ class plugins extends endpoint implements endpoint_interface {
 
             if (!$plugin) {
                 $data[] = [
-                        $update->model_id => [
-                            'status' => false,
-                            'component' => $update->component,
-                            'error' => 'Plugin not exist in Moodle.',
-                        ],
+                    'model_id' => $update->model_id,
+                    'status' => false,
+                    'component' => $update->component,
+                    'error' => 'Plugin not exist in Moodle.',
                 ];
                 continue;
             }
@@ -189,22 +192,19 @@ class plugins extends endpoint implements endpoint_interface {
 
                 if ($versionrequest == $versioncurrent) {
                     $data[] = [
-                            $update->model_id => [
-                                    'status' => true,
-                                    'component' => $update->component,
-                                    'error' => 'Update already installed.',
-                            ],
+                        'model_id' => $update->model_id,
+                        'status' => true,
+                        'component' => $update->component,
+                        'error' => 'Update already installed.',
                     ];
 
                 } else {
                     $data[] = [
-                            $update->model_id => [
-                                    'status' => false,
-                                    'component' => $update->component,
-                                    'error' => 'Update not found.',
-                            ],
+                        'model_id' => $update->model_id,
+                        'status' => false,
+                        'component' => $update->component,
+                        'error' => 'Update not found.',
                     ];
-
                 }
 
                 continue;
@@ -221,11 +221,10 @@ class plugins extends endpoint implements endpoint_interface {
 
             if (!$updatetoinstall) {
                 $data[] = [
-                        $update->model_id => [
-                                'status' => false,
-                                'component' => $update->component,
-                                'error' => 'Update not exist.',
-                        ],
+                    'model_id' => $update->model_id,
+                    'status' => false,
+                    'component' => $update->component,
+                    'error' => 'Update not exist.',
                 ];
                 continue;
             }

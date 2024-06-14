@@ -49,7 +49,7 @@ class response {
     public $format;
 
     public function __construct() {
-        $this->set_status(STATUS_200);
+        $this->set_status(200);
         $this->headers = [];
         $this->add_header('Content-Type', 'application/json');
         $this->set_format('json');
@@ -119,6 +119,15 @@ class response {
         }
     }
 
+    public function build_headers_array() {
+        $data = [];
+        foreach ($this->headers as $header => $value) {
+            $data[] = $header . ': ' . $value;
+        }
+
+        return $data;
+    }
+
     public function encode_body() {
         switch ($this->format) {
             case 'json':
@@ -147,6 +156,55 @@ class response {
         echo $this->encode_body();
 
         die();
+    }
+
+    public function post_to_url($url) {
+        $handler = curl_init($url);
+
+        $headers = $this->build_headers_array();
+        $body = $this->get_body();
+
+        curl_setopt($handler, CURLOPT_POST, true);
+        curl_setopt($handler, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($handler, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($handler, CURLOPT_TIMEOUT, 30);
+        curl_setopt($handler, CURLOPT_POSTFIELDS, $body);
+
+        $response = curl_exec($handler);
+
+        $statuscode = curl_getinfo($handler, CURLINFO_HTTP_CODE);
+
+        curl_close($handler);
+
+        if ($statuscode != 200) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Send report message to given email address.
+     *
+     * @param string $to Email address.
+     * @param string $subject Message subject.
+     * @param mixed $body Message body (html/json/xml/string).
+     * @return void
+     */
+    public function send_to_email($to, $subject, $body) {
+
+        $from = core_user::get_noreply_user();
+        $replyto = core_user::get_noreply_user();
+
+        $this->add_header('From', $from->email);
+        $this->add_header('Reply-To', $replyto->email);
+        $this->add_header('MIME-Version', '1.0');
+
+        $headers = $this->headers;
+
+        $body = $this->encode_body();
+
+        mail($to, $subject, $body, $headers);
     }
 
     public function send_exception(Exception $exception) {
@@ -189,4 +247,5 @@ class response {
 
         mail($to, $subject, $body, $headers);
     }
+
 }

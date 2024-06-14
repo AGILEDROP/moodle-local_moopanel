@@ -30,6 +30,7 @@
 namespace local_moopanel\task;
 
 use core\task\adhoc_task;
+use local_moopanel\response;
 use local_moopanel\util\admin_presets_manager;
 
 class admin_presets_create extends adhoc_task {
@@ -38,14 +39,19 @@ class admin_presets_create extends adhoc_task {
         return get_string('task:adminpresetscreate', 'local_moopanel');
     }
 
-
     public function execute() {
 
         $manager = new admin_presets_manager();
 
-        $preset = $manager->presets_create();
+        $response = new response();
+        $response->add_header('X-API-KEY', get_config('local_moopanel', 'apikey'));
+        $response->add_header('Content-Type', 'application/json');
+        $response->set_format('xml');
 
+        $preset = $manager->presets_create();
         $customdata = $this->get_custom_data();
+
+        $url = $customdata->responseurl;
 
         if (!$preset) {
             // Send error to moopanel.
@@ -53,17 +59,10 @@ class admin_presets_create extends adhoc_task {
 
         $xml = $manager->preset_get_xml($preset);
 
-        // Send xml to moopanel app.
-        $send = $manager->presets_send($customdata->hostname, $customdata->instanceid, $xml);
+        $response->set_body($xml);
 
-        $url = $customdata->hostname;
-        $instanceid = $customdata->instanceid;
+        $send = $response->post_to_url($url);
 
-        $endpoint = $url . '/api/instances/' . $instanceid . '/admin_preset';
-        $subject = 'Admin preset to - ' . $endpoint;
-
-        $manager->preset_send_to_email('uros.virag@agiledrop.com', $subject, $xml);
-
-        mtrace($customdata->instanceid);
-    }
+        mtrace($customdata->responseurl);
+        }
 }
