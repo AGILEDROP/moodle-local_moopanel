@@ -534,13 +534,39 @@ Return status for accepted request and then make ```post``` request to Moopanel 
 GET /admin_presets?instanceid=1234
 ```
 
-#### Example response
+#### Example response (step 1)
 ```json
 {
     "status": true,
     "message": "Admin presets creation in progress"
 }
 ```
+
+#### Example response (step 2)
+If ```"status" = true``` in step 1, then start building xml content for admin presets and Send ```post``` request with xml content to Moopanel.
+```http
+POST [moopanel_url]/api/instances/[instanceid]/admin_preset
+```
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<PRESET>
+    <NAME>Moopanel</NAME>
+    <COMMENTS>Preset for MooPanel application created on 13.06.2024 - 01:23:45</COMMENTS>
+    <PRESET_DATE>1718235518</PRESET_DATE>
+    <SITE_URL>https://example.com</SITE_URL>
+    <AUTHOR>Moopanel App</AUTHOR>
+    <MOODLE_VERSION>2023100904.04</MOODLE_VERSION>
+    <MOODLE_RELEASE>4.3.4+ (Build: 20240516)</MOODLE_RELEASE>
+    <ADMIN_SETTINGS>
+        <NONE>
+            <SETTINGS>
+                ...
+            </SETTINGS>
+        </NONE>
+    </ADMIN_SETTINGS>
+</PRESET>
+```
+
 #### ToDo
 - [ ] send POST request custom headers (status )
 - [ ] send POST request custom headers (X-API-KEX )

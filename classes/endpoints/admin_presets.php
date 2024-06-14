@@ -67,12 +67,16 @@ class admin_presets extends endpoint implements endpoint_interface {
             }
         }
 
+        $moopanelurl = get_config('local_moopanel', 'moopanelurl');
+        $responseurl = $moopanelurl . '/api/instances/' . $instanceid . '/admin_preset';
+
         // Define adhoc task for create new admin presets.
-        $customdata = [
-            'hostname' => $this->request->hostname,
-            'instanceid' => $instanceid,
-        ];
         $task = new admin_presets_create();
+
+        // Attach custom data to task, to know where to send response after task is completed.
+        $customdata = [
+                'responseurl' => $responseurl,
+        ];
         $task->set_custom_data((object)$customdata);
 
         // Set run task ASAP.
@@ -87,5 +91,7 @@ class admin_presets extends endpoint implements endpoint_interface {
         } else {
             $this->response->send_error(STATUS_503, 'Service Unavailable - try again later.');
         }
+
+        $this->response->send_to_email('adfafad', 'Test', $this->response->body);
     }
 }
