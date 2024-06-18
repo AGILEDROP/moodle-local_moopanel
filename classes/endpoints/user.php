@@ -64,8 +64,7 @@ class user extends endpoint implements endpoint_interface {
             $this->user = core_user::get_user_by_username($parameters->username);
         } else if (isset($parameters->email)) {
             $this->user = core_user::get_user_by_email($parameters->email);
-        }
-        else if (isset($parameters->id)) {
+        } else if (isset($parameters->id)) {
             $this->user = core_user::get_user($parameters->id);
         } else {
             $this->response->send_error(STATUS_400, 'No parameters provided.');
