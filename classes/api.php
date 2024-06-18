@@ -229,8 +229,6 @@ class api {
     }
 
     protected function parse_request_parameters($url) {
-        // $urlparts = explode('/', $url);
-        // $parameters = array_slice($urlparts, 4);
 
         $param = parse_url($url);
 
@@ -241,7 +239,6 @@ class api {
         $query = $param['query'];
         parse_str($query, $queryparams);
 
-        // $this->request->set_parameters($parameters);
         $this->request->set_parameters($queryparams);
     }
 

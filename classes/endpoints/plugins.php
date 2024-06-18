@@ -32,10 +32,12 @@ namespace local_moopanel\endpoints;
 use core\update\checker;
 use core_plugin_manager;
 use core_user;
+use Exception;
 use local_moopanel\background_process;
 use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
-use local_moopanel\util\plugin_manager;
+use local_moopanel\task\plugins_install_zip;
+use local_moopanel\task\plugins_update;
 use moodle_url;
 
 class plugins extends endpoint implements endpoint_interface {
@@ -59,7 +61,7 @@ class plugins extends endpoint implements endpoint_interface {
         switch ($this->request->method) {
             case 'POST':
 
-                $this->reset_updated();;
+                $this->countupdated = 0;
 
                 switch ($path) {
                     case 'plugins/updates':
@@ -80,7 +82,11 @@ class plugins extends endpoint implements endpoint_interface {
                 break;
 
             case 'GET':
-                $this->get_plugins();
+                if ($path == 'plugins/updateprogress') {
+                    $this->updates_in_progress();
+                } else {
+                    $this->get_plugins();
+                }
                 break;
         }
     }
@@ -109,7 +115,6 @@ class plugins extends endpoint implements endpoint_interface {
 
         $data = [];
         $plugintypes = $pluginman->get_plugins();
-
 
         foreach ($plugintypes as $key => $plugintype) {
 
@@ -149,136 +154,112 @@ class plugins extends endpoint implements endpoint_interface {
     }
 
     private function post_update() {
-        global $CFG;
 
-        if (!isset($this->request->payload->updates)) {
+        $instanceid = $this->request->payload->instance_id ?? false;
+
+        if (!is_numeric($instanceid)) {
+            $this->response->send_error(STATUS_400, 'Bad Request - Please provide a valid instance ID.');
+        }
+
+        $updates = $this->request->payload->updates ?? false;
+
+        if (!$updates) {
             $this->response->send_error(STATUS_400, 'Bad request - no updates specified.');
         }
 
-        $updates = $this->request->payload->updates;
         if (empty($updates)) {
             $this->response->send_error(STATUS_400, 'Bad request - no updates specified.');
         }
 
-        $pluginmanager = new plugin_manager();
-        $pluginman = core_plugin_manager::instance();
+        // Define Adhoc task for update plugins.
+        $task = new plugins_update();
 
+        // Attach custom data to task, to know where to send response after task is completed.
+        $userid = $this->request->payload->user_id ?? false;
+        $username = $this->request->payload->username ?? false;
+        $moopanelurl = get_config('local_moopanel', 'moopanelurl');
+        $responseurl = $moopanelurl . '/api/updates/plugins/instance/' . $instanceid;
 
-        $this->response->add_body_key('user_id', 4);
-        $this->response->add_body_key('username', 'test@test.si');
+        $customdata = [
+            'responseurl' => $responseurl,
+            'userid' => $userid,
+            'username' => $username,
+            'updates' => $updates,
+        ];
+        $task->set_custom_data((object)$customdata);
 
-        $data = [];
-        foreach ($updates as $update) {
+        // Set run task ASAP.
+        $task->set_next_run_time(time() - 1);
+        \core\task\manager::queue_adhoc_task($task, true);
 
-            $plugin = $pluginman->get_plugin_info($update->component);
+        $taskwillrun = \core\task\manager::get_adhoc_tasks('\local_moopanel\task\plugins_update');
 
-            if (!$plugin) {
-                $data[] = [
-                    'model_id' => $update->model_id,
-                    'status' => false,
-                    'component' => $update->component,
-                    'error' => 'Plugin not exist in Moodle.',
-                ];
-                continue;
-            }
-
-            $availableupdates = $plugin->available_updates();
-
-            $this->response->add_body_key('updates', $data);
-
-            if (!$availableupdates) {
-                $versioncurrent = (int)$plugin->versiondisk;
-                $versionrequest = (int)$update->version;
-
-                if ($versionrequest == $versioncurrent) {
-                    $data[] = [
-                        'model_id' => $update->model_id,
-                        'status' => true,
-                        'component' => $update->component,
-                        'error' => 'Update already installed.',
-                    ];
-
-                } else {
-                    $data[] = [
-                        'model_id' => $update->model_id,
-                        'status' => false,
-                        'component' => $update->component,
-                        'error' => 'Update not found.',
-                    ];
-                }
-
-                continue;
-            }
-
-            $updatetoinstall = null;
-            foreach ($availableupdates as $availableupdate) {
-                if ($availableupdate->version == $update->version) {
-                    if ($availableupdate->download == $update->download) {
-                        $updatetoinstall = $availableupdate;
-                    }
-                }
-            }
-
-            if (!$updatetoinstall) {
-                $data[] = [
-                    'model_id' => $update->model_id,
-                    'status' => false,
-                    'component' => $update->component,
-                    'error' => 'Update not exist.',
-                ];
-                continue;
-            }
-
-            $report = $pluginmanager->install_zip($updatetoinstall->download);
-            if ($report['status']) {
-                $this->increase_updated();
-            }
-
-            $data[] = [
-                    $update->model_id => $report,
-                ];
+        if ($taskwillrun) {
+            $task = reset($taskwillrun);
+            $id = $task->get_id();
+            $this->response->add_body_key('status', true);
+            $this->response->add_body_key('moodle_job_id', $id);
+            $this->response->add_body_key('message', 'Plugins update in progress.');
+        } else {
+            $this->response->send_error(STATUS_503, 'Service Unavailable - try again later.');
         }
-
-        $this->response->add_body_key('updates', $data);
     }
 
     private function post_zip_install() {
         global $CFG;
 
-        $pluginmanager = new plugin_manager();
+        require_once($CFG->dirroot.'/lib/upgradelib.php');
 
-        if (!isset($this->request->payload->updates)) {
+        $instanceid = $this->request->payload->instance_id ?? false;
+
+        if (!is_numeric($instanceid)) {
+            $this->response->send_error(STATUS_400, 'Bad Request - Please provide a valid instance ID.');
+        }
+
+        $updates = $this->request->payload->updates ?? false;
+
+        if (!$updates) {
             $this->response->send_error(STATUS_400, 'Bad request - no zip files urls specified.');
         }
 
-        $updates = $this->request->payload->updates;
         if (empty($updates)) {
             $this->response->send_error(STATUS_400, 'Bad request - no zip files urls specified.');
         }
 
-        $reports = [];
-        foreach ($updates as $update) {
-            $key = $update;
+        // Define Adhoc task for update plugins.
+        $task = new plugins_install_zip();
 
-            $report = $pluginmanager->install_zip($update);
-            $reports[$key] = $report;
+        // Attach custom data to task, to know where to send response after task is completed.
+        $userid = $this->request->payload->user_id ?? false;
+        $username = $this->request->payload->username ?? false;
+        $moopanelurl = get_config('local_moopanel', 'moopanelurl');
+        $responseurl = $moopanelurl . '/api/updates/plugins/instance/' . $instanceid;
 
-            if ($report['status']) {
-                $this->increase_updated();
-            }
-            //$updates[][$key] = $report;
+        $customdata = [
+                'responseurl' => $responseurl,
+                'userid' => $userid,
+                'username' => $username,
+                'updates' => $updates,
+        ];
+        $task->set_custom_data((object)$customdata);
+
+        // Set run task ASAP.
+        $task->set_next_run_time(time() - 1);
+        \core\task\manager::queue_adhoc_task($task, true);
+
+        $taskwillrun = \core\task\manager::get_adhoc_tasks('\local_moopanel\task\plugins_install_zip');
+
+        if ($taskwillrun) {
+            $task = reset($taskwillrun);
+            $id = $task->get_id();
+            $this->response->add_body_key('status', true);
+            $this->response->add_body_key('moodle_job_id', $id);
+            $this->response->add_body_key('message', 'Plugins install in progress.');
+        } else {
+            $this->response->send_error(STATUS_503, 'Service Unavailable - try again later.');
         }
-
-        $this->response->add_body_key("updates", $reports);
     }
 
-    private function reset_updated() {
-        $this->countupdated = 0;
-    }
-
-    private function increase_updated() {
-        $this->countupdated++;
-    }
 
     private function get_plugin_updates($plugin) {
         $updates = [];
@@ -294,8 +275,7 @@ class plugins extends endpoint implements endpoint_interface {
                 if ($newversion > $oldversion) {
                     $pluginupdate->type = 'plugin';
                     $updates[] = $pluginupdate;
-                }
-                else {
+                } else {
                     $a = 2;
                 }
             }
@@ -345,7 +325,91 @@ class plugins extends endpoint implements endpoint_interface {
             $logs[] = (array) $updatelog;
         }
 
-
         return $logs;
+    }
+
+    private function updates_in_progress() {
+        global $DB;
+
+        $parameters = $this->request->parameters;
+
+        $taskid = $parameters->moodle_job_id ?? false;
+
+        if (!$taskid) {
+            $this->response->send_error(STATUS_400, 'Bad Request - Please provide a valid moodle job ID.');
+        }
+
+        // Check if adhoc task exist.
+        $taskexist = $DB->record_exists('task_adhoc', ['id' => $taskid]);
+
+        if ($taskexist) {
+            // Task is in progress or has failed.
+            $task = $DB->get_record('task_adhoc', ['id' => $taskid]);
+
+            if ($task->faildelay) {
+                // Task was failed.
+                $conditions = [
+                    'component' => 'local_moopanel',
+                    'classname' => 'local_moopanel\task\plugins_update',
+                ];
+                $report = $this->get_task_log($taskid);
+            }
+
+            if ($task->timestarted) {
+                // Task is running.
+                $this->response->add_body_key('status', 2);
+                $this->response->add_body_key('error', '');
+                return;
+            }
+        } else {
+            // Task is completed.
+            $report = $this->get_task_log($taskid);
+
+            if (!$report) {
+                $this->response->send_error(STATUS_500, 'There was problem running updates, please try again.');
+            }
+
+            $failed = $report['result'];
+
+            if (!$failed) {
+                // Task finished successfully.
+                $this->response->add_body_key('status', 1);
+                $this->response->add_body_key('error', '');
+            } else {
+                // Task failed.
+                $this->response->add_body_key('status', 3);
+                $this->response->add_body_key('error', $report['message']);
+            }
+        }
+    }
+
+    private function get_task_log($taskid) {
+        global $DB;
+
+        $conditions = [
+                'component' => 'local_moopanel',
+                'classname' => 'local_moopanel\task\plugins_update',
+        ];
+        $logs = $DB->get_records('task_log', $conditions, 'ID DESC');
+
+        $report = [];
+
+        foreach ($logs as $log) {
+            $taskreport = $log->output;
+
+            $search = "task id: " . $taskid . "\n";
+
+            $contain = str_contains($taskreport, $search);
+
+            if ($contain) {
+                $report = [
+                        'result' => (bool)$log->result,
+                    'message' => $taskreport,
+                ];
+                return  $report;
+            }
+        }
+
+        return false;
     }
 }

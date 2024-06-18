@@ -33,10 +33,6 @@ require('../../config.php');
 require('classes/api.php');
 require('classes/error_handler.php');
 
-/*
-    set_exception_handler(\local_moopanel\error_handler::throw_error());
-*/
-
 $server = new api();
 $server->run();
 

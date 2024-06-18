@@ -85,10 +85,13 @@ class plugin_manager {
 
         $report['component'] = $component;
 
-        $installable = array((object)array(
-                'component' => $component,
-                'zipfilepath' => $storage . '/plugin.zip',
-        ));
+        $installable = [];
+        $installdata = new \stdClass();
+        $installdata->component = $component;
+        $installdata->zipfilepath = $storage . '/plugin.zip';
+
+        $installable[] = $installdata;
+
 
         // Include needle library.
         require_once($CFG->dirroot.'/lib/pagelib.php');
@@ -98,7 +101,7 @@ class plugin_manager {
         $installed = $this->pluginman->install_plugins($installable, true, true);
         $report['status'] = $installed;
 
-        //Remove downloaded file.
+        // Remove downloaded file.
         $delete = remove_dir($storage);
 
         return $report;
@@ -134,7 +137,7 @@ class plugin_manager {
         return true;
     }
 
-     public function upgrade_noncore($url) {
+    public function upgrade_noncore($url) {
         global $CFG;
 
         $handler = curl_init($url);

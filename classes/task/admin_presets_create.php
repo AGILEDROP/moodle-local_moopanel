@@ -44,9 +44,6 @@ class admin_presets_create extends adhoc_task {
         $manager = new admin_presets_manager();
 
         $response = new response();
-        $response->add_header('X-API-KEY', get_config('local_moopanel', 'apikey'));
-        $response->add_header('Content-Type', 'application/json');
-        $response->set_format('xml');
 
         $preset = $manager->presets_create();
         $customdata = $this->get_custom_data();
@@ -54,8 +51,12 @@ class admin_presets_create extends adhoc_task {
         $url = $customdata->responseurl;
 
         if (!$preset) {
-            // Send error to moopanel.
+            $response->send_error(500, 'Problem with creating admin presets.');
         }
+
+        $response->add_header('X-API-KEY', get_config('local_moopanel', 'apikey'));
+        $response->add_header('Content-Type', 'application/json');
+        $response->set_format('xml');
 
         $xml = $manager->preset_get_xml($preset);
 
@@ -64,5 +65,5 @@ class admin_presets_create extends adhoc_task {
         $send = $response->post_to_url($url);
 
         mtrace($customdata->responseurl);
-        }
+    }
 }

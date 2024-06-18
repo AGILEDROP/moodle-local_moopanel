@@ -30,6 +30,9 @@
 namespace local_moopanel\task;
 
 use core\task\adhoc_task;
+use core_plugin_manager;
+use local_moopanel\response;
+use local_moopanel\util\plugin_manager;
 
 class plugins_update extends adhoc_task {
 
@@ -39,7 +42,98 @@ class plugins_update extends adhoc_task {
 
 
     public function execute() {
-        // some logic here
-        $a = 2;
+        $id = $this->get_id();
+
+        $response = new response();
+        $response->add_header('X-API-KEY', get_config('local_moopanel', 'apikey'));
+
+        $pluginmanager = new plugin_manager();
+        $pluginman = core_plugin_manager::instance();
+
+        $customdata = $this->get_custom_data();
+
+        $response->add_body_key('moodle_job_id', (int)$id);
+        $response->add_body_key('user_id', $customdata->userid);
+        $response->add_body_key('username', $customdata->username);
+
+        $url = $customdata->responseurl;
+        $updates = $customdata->updates;
+
+        $data = [];
+        $pluginsupdated = 0;
+
+        foreach ($updates as $update) {
+
+            $updateprocess = [
+                'model_id' => $update->model_id,
+                'status' => false,
+                'component' => $update->component,
+                'error' => null,
+            ];
+
+            $plugin = $pluginman->get_plugin_info($update->component);
+
+            if (!$plugin) {
+                $updateprocess['error'] = 'Plugin not exist in Moodle';
+                $data[] = $updateprocess;
+                continue;
+            }
+
+            // Get available updates for current plugin.
+            $availableupdates = $plugin->available_updates();
+
+            if (!$availableupdates) {
+                $versioncurrent = (int)$plugin->versiondisk;
+                $versionrequest = (int)$update->version;
+
+                if ($versionrequest == $versioncurrent) {
+                    $updateprocess['status'] = true;
+                    $updateprocess['error'] = 'Update already installed';
+                } else if ($versionrequest < $versioncurrent) {
+                    $updateprocess['status'] = true;
+                    $updateprocess['error'] = 'Newer version of plugin already installed';
+                } else {
+                    $updateprocess['status'] = false;
+                    $updateprocess['error'] = 'Update not found';
+                }
+
+                $data[] = $updateprocess;
+                continue;
+            }
+
+            $updatetoinstall = null;
+            // Check which update to install.
+            foreach ($availableupdates as $availableupdate) {
+                if ($availableupdate->version == $update->version) {
+                    if ($availableupdate->download == $update->download) {
+                        $updatetoinstall = $availableupdate;
+                    }
+                }
+            }
+
+            if (!$updatetoinstall) {
+                $updateprocess['status'] = false;
+                $updateprocess['error'] = 'Update not exist';
+                $data[] = $updateprocess;
+                continue;
+            }
+
+            $report = $pluginmanager->install_zip($updatetoinstall->download);
+            if ($report['status']) {
+                $pluginsupdated++;
+                $updateprocess['status'] = true;
+            } else {
+                $updateprocess['error'] = $report['error'];
+            }
+
+            $data[] = $updateprocess;
+        }
+
+        $response->add_body_key('updates', $data);
+
+        // Send response to Moo-panel app.
+        // $send = $response->post_to_url($url);
+
+        $response->send_to_email('test@test.com', 'Plugin updates', $response->body);
     }
 }
