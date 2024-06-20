@@ -29,8 +29,6 @@
 
 require_once(__DIR__ . '/../../../config.php');
 
-// require_login();
-
 $url = new moodle_url('/local/moopanel/pages/upgrade_noncore.php');
 
 $USER = core_user::get_user(2);

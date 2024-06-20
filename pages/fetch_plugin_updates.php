@@ -31,8 +31,6 @@ use core\update\checker;
 
 require_once(__DIR__ . '/../../../config.php');
 
-// require_login();
-
 $url = new moodle_url('/local/moopanel/pages/fetch_plugin_updates.php');
 
 $USER = core_user::get_user(2);
