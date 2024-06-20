@@ -131,8 +131,8 @@ class plugins_update extends adhoc_task {
 
         $response->add_body_key('updates', $data);
 
-        // Send response to Moo-panel app.
-        // $send = $response->post_to_url($url);
+        // ToDo Send response to Moo-panel app.
+        // $send = $response->post_to_url($url).
 
         $response->send_to_email('test@test.com', 'Plugin updates', $response->body);
     }

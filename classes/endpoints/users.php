@@ -134,7 +134,7 @@ class users extends endpoint implements endpoint_interface {
         $users = $DB->get_records_sql($sql, $params);
 
         // ToDo - dummy action currently return random numbe- remove it.
-        // $online = count($users);
+        // $online = count($users).
         $online = rand(0, $allusers);
 
         $this->response->add_body_key('all_users', $allusers);

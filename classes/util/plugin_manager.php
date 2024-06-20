@@ -92,7 +92,6 @@ class plugin_manager {
 
         $installable[] = $installdata;
 
-
         // Include needle library.
         require_once($CFG->dirroot.'/lib/pagelib.php');
         require_once($CFG->dirroot.'/lib/moodlelib.php');

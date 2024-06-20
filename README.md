@@ -568,6 +568,105 @@ POST [moopanel_url]/api/instances/[instanceid]/admin_preset
 ```
 
 #### ToDo
-- [ ] send POST request custom headers (status )
-- [ ] send POST request custom headers (X-API-KEX )
+- [x] send POST request custom headers (X-API-KEX )
 
+### Endpoint ```/tasks/check```
+```html
+GET /tasks/check
+```
+Return information for selected adhoc task.
+
+#### Available parameters
+| Parameter | Type      | Description                            | Example              |
+|:----------|:----------|:---------------------------------------|:---------------------|
+| `id`      | `integer` | **Required**. Adhoc task id.           | ?id=1234             |
+| `type`    | `string`  | **Required**. Adhoc task type.         | ?type=plugins_update |
+
+#### Possible response errors
+| Status code | Status        | Message             |
+|:------------|:--------------|:--------------------|
+| `400`       | `bad request` | Id not specified.   |
+| `400`       | `bad request` | Type not specified. |
+
+#### Example request:
+```http
+GET /tasks/check?id=1234&type=plugins_update
+```
+
+#### Example response:
+```json
+{
+    "status": 1,
+    "error": ""
+}
+```
+
+### Endpoint ```/courses```
+```html
+GET /courses
+```
+Return information about courses and course categories. If no parameters provided, return only number of all courses and al course categories.
+
+#### Available parameters
+| Parameter           | Type   | Description                                   | Example            |
+|:--------------------|:-------|:----------------------------------------------|:-------------------|
+| `displaycourses`    | `flag` | **Optional**. Display courses list.           | ?displaycourses    |
+| `displaycategories` | `flag` | **Optional**. Display course categories list. | ?displaycategories |
+
+#### Example 1 request:
+```http
+GET /courses
+```
+
+#### Example 1 response:
+```json
+{
+  "number_of_categories": 4,
+  "number_of_courses": 666
+}
+```
+
+#### Example 2 request:
+```http
+GET /courses?displaycategories&displaycourses
+```
+
+#### Example 2 response:
+```json
+{
+  "number_of_categories": 4,
+  "number_of_courses": 666,
+  "categories": [
+    {
+      "id": 1,
+      "parent": 1,
+      "name": "Category 1",
+      "sort": 10000,
+      "path": "/1",
+      "depth": 1
+    },
+    {
+      "id": 2,
+      "parent": 0,
+      "name": "2023/2024",
+      "sort": 20000,
+      "path": "/2",
+      "depth": 1
+    },
+    "..."
+  ],
+  "courses": [
+    {
+      "id": 1,
+      "category": 1,
+      "name": "Course title 1"
+    },
+    {
+      "id": 2,
+      "category": 1,
+      "name": "Course title 2"
+    },
+    "..."
+  ]
+}
+```

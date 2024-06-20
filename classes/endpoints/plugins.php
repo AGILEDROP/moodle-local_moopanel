@@ -82,11 +82,7 @@ class plugins extends endpoint implements endpoint_interface {
                 break;
 
             case 'GET':
-                if ($path == 'plugins/updateprogress') {
-                    $this->updates_in_progress();
-                } else {
-                    $this->get_plugins();
-                }
+                $this->get_plugins();
                 break;
         }
     }
@@ -326,90 +322,5 @@ class plugins extends endpoint implements endpoint_interface {
         }
 
         return $logs;
-    }
-
-    private function updates_in_progress() {
-        global $DB;
-
-        $parameters = $this->request->parameters;
-
-        $taskid = $parameters->moodle_job_id ?? false;
-
-        if (!$taskid) {
-            $this->response->send_error(STATUS_400, 'Bad Request - Please provide a valid moodle job ID.');
-        }
-
-        // Check if adhoc task exist.
-        $taskexist = $DB->record_exists('task_adhoc', ['id' => $taskid]);
-
-        if ($taskexist) {
-            // Task is in progress or has failed.
-            $task = $DB->get_record('task_adhoc', ['id' => $taskid]);
-
-            if ($task->faildelay) {
-                // Task was failed.
-                $conditions = [
-                    'component' => 'local_moopanel',
-                    'classname' => 'local_moopanel\task\plugins_update',
-                ];
-                $report = $this->get_task_log($taskid);
-            }
-
-            if ($task->timestarted) {
-                // Task is running.
-                $this->response->add_body_key('status', 2);
-                $this->response->add_body_key('error', '');
-                return;
-            }
-        } else {
-            // Task is completed.
-            $report = $this->get_task_log($taskid);
-
-            if (!$report) {
-                $this->response->send_error(STATUS_500, 'There was problem running updates, please try again.');
-            }
-
-            $failed = $report['result'];
-
-            if (!$failed) {
-                // Task finished successfully.
-                $this->response->add_body_key('status', 1);
-                $this->response->add_body_key('error', '');
-            } else {
-                // Task failed.
-                $this->response->add_body_key('status', 3);
-                $this->response->add_body_key('error', $report['message']);
-            }
-        }
-    }
-
-    private function get_task_log($taskid) {
-        global $DB;
-
-        $conditions = [
-                'component' => 'local_moopanel',
-                'classname' => 'local_moopanel\task\plugins_update',
-        ];
-        $logs = $DB->get_records('task_log', $conditions, 'ID DESC');
-
-        $report = [];
-
-        foreach ($logs as $log) {
-            $taskreport = $log->output;
-
-            $search = "task id: " . $taskid . "\n";
-
-            $contain = str_contains($taskreport, $search);
-
-            if ($contain) {
-                $report = [
-                        'result' => (bool)$log->result,
-                    'message' => $taskreport,
-                ];
-                return  $report;
-            }
-        }
-
-        return false;
     }
 }

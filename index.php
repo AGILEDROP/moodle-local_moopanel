@@ -27,4 +27,13 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+require_once(__DIR__ . '/../../config.php');
+
+$title = get_string('pluginname', 'local_moopanel');
+
+$pagetitle = $title;
+$url = new moodle_url("/local_moopanel/index.php");
+$PAGE->set_url($url);
+$PAGE->set_context(context_system::instance());
+$PAGE->set_title($title);
+$PAGE->set_heading($title);
