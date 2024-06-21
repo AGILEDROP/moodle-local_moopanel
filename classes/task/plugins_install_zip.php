@@ -30,6 +30,7 @@
 namespace local_moopanel\task;
 
 use core\task\adhoc_task;
+use core_plugin_manager;
 use local_moopanel\response;
 use local_moopanel\util\plugin_manager;
 
@@ -41,6 +42,8 @@ class plugins_install_zip extends adhoc_task {
 
     public function execute() {
         $id = $this->get_id();
+
+        $pluginman = core_plugin_manager::instance();
 
         $customdata = $this->get_custom_data();
 
@@ -57,20 +60,36 @@ class plugins_install_zip extends adhoc_task {
 
         $data = [];
 
+        mtrace("################################################################################");
+
         foreach ($updates as $update) {
-            $a = 2;
             $report = $pluginmanager->install_zip($update);
+            $component = $report['component'] ?? null;
+            $version = null;
+
+            if ($component) {
+                $plugin = $pluginman->get_plugin_info($component);
+                $version = $plugin->versiondisk;
+            }
+
             $data[] = [
                 'link' => $update,
                 'status' => $report['status'],
+                'component' => $component,
+                'version' => $version,
                 'error' => $report['error'],
             ];
+
+            $msg = $update . ' status: ' . $report['status'] . ', error: ' . $report['error'];
+            mtrace($msg);
         }
+
+        mtrace("################################################################################");
 
         $response->add_body_key('updates', $data);
 
-        // ToDo Send response to Moo-panel app.
-        // $post = $response->post_to_url($url).
+        // Send response to Moo-panel app.
+        $post = $response->post_to_url($url);
 
         $response->send_to_email('test@test.com', 'Plugins install', $response->body);
     }

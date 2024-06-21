@@ -92,6 +92,6 @@ class admin_presets extends endpoint implements endpoint_interface {
             $this->response->send_error(STATUS_503, 'Service Unavailable - try again later.');
         }
 
-        $this->response->send_to_email('adfafad', 'Test', $this->response->body);
+        // $this->response->send_to_email('test@test.si', 'Admin presets', $this->response->body);
     }
 }
