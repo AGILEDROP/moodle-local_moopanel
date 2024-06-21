@@ -229,7 +229,7 @@ class plugins extends endpoint implements endpoint_interface {
         $userid = $this->request->payload->user_id ?? false;
         $username = $this->request->payload->username ?? false;
         $moopanelurl = get_config('local_moopanel', 'moopanelurl');
-        $responseurl = $moopanelurl . '/api/updates/plugins/instance/' . $instanceid;
+        $responseurl = $moopanelurl . '/api/updates/zip-plugins/instance/' . $instanceid;
 
         $customdata = [
                 'responseurl' => $responseurl,

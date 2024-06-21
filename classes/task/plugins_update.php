@@ -62,6 +62,7 @@ class plugins_update extends adhoc_task {
         $data = [];
         $pluginsupdated = 0;
 
+        mtrace("################################################################################");
         foreach ($updates as $update) {
 
             $updateprocess = [
@@ -76,6 +77,8 @@ class plugins_update extends adhoc_task {
             if (!$plugin) {
                 $updateprocess['error'] = 'Plugin not exist in Moodle';
                 $data[] = $updateprocess;
+                $msg = $update->component . ' status: false, error: Plugin not exist in Moodle';
+                mtrace($msg);
                 continue;
             }
 
@@ -97,6 +100,8 @@ class plugins_update extends adhoc_task {
                     $updateprocess['error'] = 'Update not found';
                 }
 
+                $msg = $update->component . ' status: ' . $updateprocess['status'] . ', error: ' . $updateprocess['error'];
+                mtrace($msg);
                 $data[] = $updateprocess;
                 continue;
             }
@@ -115,6 +120,8 @@ class plugins_update extends adhoc_task {
                 $updateprocess['status'] = false;
                 $updateprocess['error'] = 'Update not exist';
                 $data[] = $updateprocess;
+                $msg = $update->component . ' status: ' . $updateprocess['status'] . ', error: ' . $updateprocess['error'];
+                mtrace($msg);
                 continue;
             }
 
@@ -126,14 +133,18 @@ class plugins_update extends adhoc_task {
                 $updateprocess['error'] = $report['error'];
             }
 
+            $msg = $update->component . ' status: ' . $updateprocess['status'] . ', error: ' . $updateprocess['error'];
+            mtrace($msg);
             $data[] = $updateprocess;
         }
 
+        mtrace("################################################################################");
+
         $response->add_body_key('updates', $data);
 
-        // ToDo Send response to Moo-panel app.
-        // $send = $response->post_to_url($url).
+        // Send response to Moo-panel app.
+        $send = $response->post_to_url($url);
 
-        $response->send_to_email('test@test.com', 'Plugin updates', $response->body);
+        // $response->send_to_email('test@test.com', 'Plugin updates', $response->body);
     }
 }

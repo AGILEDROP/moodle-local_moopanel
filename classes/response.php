@@ -162,7 +162,8 @@ class response {
         $handler = curl_init($url);
 
         $headers = $this->build_headers_array();
-        $body = $this->get_body();
+        //$body = $this->get_body();
+        $body = $this->encode_body();
 
         curl_setopt($handler, CURLOPT_POST, true);
         curl_setopt($handler, CURLOPT_HTTPHEADER, $headers);

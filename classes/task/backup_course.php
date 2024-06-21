@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Adhoc task class - create admin presets.
+ * Adhoc task class - create backups for specified course.
  *
- * File         admin_presets_create.php
+ * File         plugins_install_zip.php
  * Encoding     UTF-8
  *
  * @package     local_moopanel
@@ -31,41 +31,33 @@ namespace local_moopanel\task;
 
 use core\task\adhoc_task;
 use local_moopanel\response;
-use local_moopanel\util\admin_presets_manager;
 
-class admin_presets_create extends adhoc_task {
-
-    public function get_name() {
-        return get_string('task:adminpresetscreate', 'local_moopanel');
-    }
+class backup_course extends adhoc_task {
 
     public function execute() {
 
-        $manager = new admin_presets_manager();
-
         $response = new response();
 
-        $preset = $manager->presets_create();
         $customdata = $this->get_custom_data();
 
-        $url = $customdata->responseurl;
+        $returnurl = $customdata->returnurl;
+        $type = $customdata->type;
+        $instanceid = $customdata->instanceid;
+        $courseid = $customdata->courseid;
 
-        if (!$preset) {
-            $response->send_error(500, 'Problem with creating admin presets.');
-        }
+        $msg = 'Course Backup for course id ' . $courseid . 'created.';
 
-        $response->add_header('X-API-KEY', get_config('local_moopanel', 'apikey'));
-        $response->add_header('Content-Type', 'application/json');
-        $response->set_format('xml');
+        // ToDo create real backup.
+        mtrace($msg);
 
-        $xml = $manager->preset_get_xml($preset);
+        $response->add_body_key('courseid', $courseid);
+        $response->add_body_key('link', 'https://test.si/123-2024-06-21.zip');
+        $response->add_body_key('password', 'abcdefgh12345678');
+        $response->add_body_key('status', true);
 
-        $response->set_body($xml);
+        // Send response to Moo-panel app.
+        $send = $response->post_to_url($returnurl);
 
-        $send = $response->post_to_url($url);
-
-        // $response->send_to_email('test@test.com', 'Admin presets', $response->body);
-
-        mtrace($customdata->responseurl);
+        // $response->send_to_email('test@test.com', 'Course backup', $response->body);
     }
 }
