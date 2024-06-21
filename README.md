@@ -602,7 +602,7 @@ GET /tasks/check?id=1234&type=plugins_update
 ```
 
 ### Endpoint ```/courses```
-```html
+```http
 GET /courses
 ```
 Return information about courses and course categories. If no parameters provided, return only number of all courses and al course categories.
@@ -668,5 +668,102 @@ GET /courses?displaycategories&displaycourses
     },
     "..."
   ]
+}
+```
+
+### Endpoint ```/backups```
+```http
+GET /backups
+```
+Return information about courses backup in progress. No parameters needed.
+
+#### Example response:
+```json
+{
+  "backups_in_progress": [
+    {
+      "id": 2206,
+      "message": "in progress"
+    },
+    {
+      "id": 2207,
+      "message": "in progress"
+    },
+    {
+      "id": 2208,
+      "message": "in progress"
+    }
+  ]
+}
+```
+```http
+POST /backups
+```
+Specify moodle course ids in request body for which you wan to create backups. No parameters needed.
+
+#### Request body example
+```json
+{
+  "data": {
+    "instance_id": 666,
+    "storage": "local",
+    "credentials": {
+      "url": "https://test-link-for-storage.com/folder",
+      "api-key": "abcd1234",
+      "key2": "efgh5678"
+    },
+
+    "courses": [ 5, 6, 7, 2206, 2207, 2208 ]
+  }
+}
+```
+Moodle adhoc task will be created for existing course.
+
+#### Response body example (step 1)
+```json
+{
+  "backups": [
+    {
+      "id": 2206,
+      "message": "Backup will be created."
+    },
+    {
+      "id": 2207,
+      "message": "Backup will be created."
+    },
+    {
+      "id": 2208,
+      "message": "Backup will be created."
+    }
+  ],
+  "errors": [
+    {
+      "id": 5,
+      "message": "Course not exist."
+    },
+    {
+      "id": 6,
+      "message": "Course not exist."
+    },
+    {
+      "id": 7,
+      "message": "Course not exist."
+    }
+  ]
+}
+```
+Moodle will process taks ASAP. When finished each task, send post request to Moopanel app.
+
+#### Example response (step 2)
+Send report to Moopanel for each course.
+```http
+POST [moopanel_url]/api/backups/courses/[instanceid]
+```
+```json
+{
+  "courseid":2208,
+  "link":"https:\/\/test.si\/123-2024-06-21.zip",
+  "password":"abcdefgh12345678",
+  "status":true
 }
 ```
