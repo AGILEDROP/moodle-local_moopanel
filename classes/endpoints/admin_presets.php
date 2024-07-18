@@ -30,6 +30,7 @@
 namespace local_moopanel\endpoints;
 
 use core\cron;
+use core\task\manager;
 use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
 use local_moopanel\task\admin_presets_create;
@@ -81,9 +82,9 @@ class admin_presets extends endpoint implements endpoint_interface {
 
         // Set run task ASAP.
         $task->set_next_run_time(time() - 1);
-        \core\task\manager::queue_adhoc_task($task, true);
+        manager::queue_adhoc_task($task, true);
 
-        $taskwillrun = \core\task\manager::get_adhoc_tasks('\local_moopanel\task\admin_presets_create');
+        $taskwillrun = manager::get_adhoc_tasks('\local_moopanel\task\admin_presets_create');
 
         if ($taskwillrun) {
             $this->response->add_body_key('status', true);
@@ -91,7 +92,5 @@ class admin_presets extends endpoint implements endpoint_interface {
         } else {
             $this->response->send_error(STATUS_503, 'Service Unavailable - try again later.');
         }
-
-        // $this->response->send_to_email('test@test.si', 'Admin presets', $this->response->body);
     }
 }

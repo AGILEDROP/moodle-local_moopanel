@@ -90,7 +90,5 @@ class plugins_install_zip extends adhoc_task {
 
         // Send response to Moo-panel app.
         $post = $response->post_to_url($url);
-
-        // $response->send_to_email('test@test.com', 'Plugins install', $response->body);
     }
 }

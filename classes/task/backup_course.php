@@ -17,7 +17,7 @@
 /**
  * Adhoc task class - create backups for specified course.
  *
- * File         plugins_install_zip.php
+ * File         backup_course.php
  * Encoding     UTF-8
  *
  * @package     local_moopanel
@@ -31,33 +31,98 @@ namespace local_moopanel\task;
 
 use core\task\adhoc_task;
 use local_moopanel\response;
+use local_moopanel\util\course_backup_manager;
 
 class backup_course extends adhoc_task {
 
     public function execute() {
+        global $CFG, $DB;
 
         $response = new response();
+        $response->add_header('X-API-KEY', get_config('local_moopanel', 'apikey'));
+
+        $backupmanager = new course_backup_manager();
 
         $customdata = $this->get_custom_data();
 
         $returnurl = $customdata->returnurl;
-        $type = $customdata->type;
-        $instanceid = $customdata->instanceid;
+        $mode = $customdata->mode;
+        $storage = $customdata->storage;
         $courseid = $customdata->courseid;
 
-        $msg = 'Course Backup for course id ' . $courseid . 'created.';
+        $backup = $backupmanager->create_backup($courseid, $mode);
 
-        // ToDo create real backup.
-        mtrace($msg);
+        $created = $backup['status'];
 
-        $response->add_body_key('courseid', $courseid);
-        $response->add_body_key('link', 'https://test.si/123-2024-06-21.zip');
-        $response->add_body_key('password', 'abcdefgh12345678');
+        if (!$created) {
+            $msg = $backup['message'];
+            mtrace($msg);
+            $response->add_body_key('status', false);
+            $response->add_body_key('message', $msg);
+            // Send response to Moo-panel app.
+            $send = $response->post_to_url($returnurl);
+            die;
+        }
+
+        if ($storage == 'local') {
+            $url = '/moopanel_course_backups/' . $mode . '/' . $backup['filename'];
+        } else {
+            // ToDo - copy backup file to external storage and delete it from local storage.
+            $url = $storage . '/' . $mode . '/' . $backup['filename'];
+        }
+
         $response->add_body_key('status', true);
+        $response->add_body_key('courseid', $courseid);
+        $response->add_body_key('link', $url);
+        $response->add_body_key('password', $backup['password']);
+        $response->add_body_key('filesize', $backup['filesize']);
 
         // Send response to Moo-panel app.
         $send = $response->post_to_url($returnurl);
 
-        // $response->send_to_email('test@test.com', 'Course backup', $response->body);
+        $response->send_to_email('test@test.com', 'Course backup', $response->body);
+
+        mtrace('Execute backup plan      = ' . $backup['diff1']);
+        mtrace('Copy mbz backup file     = ' . $backup['diff2']);
+        mtrace('Delete org mbz file      = ' . $backup['diff3']);
+        mtrace('Create zip file from mbz = ' . $backup['diff4']);
+        mtrace('Copy zip and delete tmp  = ' . $backup['diff5']);
+        mtrace('Zip file size = ' . $this->file_size_convert($backup['filesize']));
+    }
+
+    private function file_size_convert($bytes) {
+        $bytes = floatval($bytes);
+        $arbytes = [
+            0 => [
+                "UNIT" => "TB",
+                "VALUE" => pow(1024, 4),
+                ],
+            1 => [
+                "UNIT" => "GB",
+                "VALUE" => pow(1024, 3),
+                ],
+            2 => [
+                "UNIT" => "MB",
+                "VALUE" => pow(1024, 2),
+                ],
+            3 => [
+                "UNIT" => "KB",
+                "VALUE" => 1024,
+                ],
+            4 => [
+                "UNIT" => "B",
+                "VALUE" => 1,
+                ],
+            ];
+
+        foreach ($arbytes as $aritem) {
+            if ($bytes >= $aritem["VALUE"]) {
+                $result = $bytes / $aritem["VALUE"];
+                $result = str_replace(".", ",", strval(round($result, 2)));
+                $result .= " " . $aritem["UNIT"];
+                break;
+            }
+        }
+        return $result;
     }
 }

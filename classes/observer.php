@@ -40,8 +40,6 @@ class observer {
         global $DB;
 
         $data = $event->get_data();
-
         $a = 2;
-
     }
 }

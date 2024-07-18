@@ -74,7 +74,6 @@ class courses extends endpoint implements endpoint_interface {
 
         $categories = $DB->get_records('course_categories');
 
-
         foreach ($categories as $category) {
             $row = new \stdClass();
             $row->id = (int)$category->id;
