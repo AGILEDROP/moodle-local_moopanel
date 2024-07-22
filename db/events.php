@@ -31,9 +31,22 @@ defined('MOODLE_INTERNAL') || die();
 
 // List of observers.
 $observers = [
-    // Admin presets events.
+        // Course modules events.
         [
-                'eventname' => '\tool_admin_presets\event\preset_exported',
-                'callback'  => '\local_moopanel\observer::preset_created',
+                'eventname' => '\core\event\course_module_created',
+                'callback'  => '\local_moopanel\observer::update_course_modified_time',
+        ],
+        [
+                'eventname' => '\core\event\course_module_updated',
+                'callback'  => '\local_moopanel\observer::update_course_modified_time',
+        ],
+        [
+                'eventname' => '\core\event\course_module_deleted',
+                'callback'  => '\local_moopanel\observer::update_course_modified_time',
+        ],
+        // User graded.
+        [
+                'eventname' => '\core\event\user_graded',
+                'callback'  => '\local_moopanel\observer::update_course_modified_time',
         ],
 ];

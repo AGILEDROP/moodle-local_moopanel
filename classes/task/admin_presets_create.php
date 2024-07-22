@@ -64,8 +64,6 @@ class admin_presets_create extends adhoc_task {
 
         $send = $response->post_to_url($url);
 
-        // $response->send_to_email('test@test.com', 'Admin presets', $response->body);
-
         mtrace($customdata->responseurl);
     }
 }
