@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Event observers used in theme mtul_slim.
+ * Event observers used in local_moopanel.
  *
  * File         observer.php
  * Encoding     UTF-8
@@ -29,17 +29,36 @@
 
 namespace local_moopanel;
 
-use tool_admin_presets\event\preset_exported;
+use core\event\base;
+use stdClass;
 
 /**
- * Event observer for theme_mtul_slim.
+ * Event observer for local_moopanel.
  */
 class observer {
 
-    public static function preset_created(preset_exported $event) {
+    public static function update_course_modified_time(base $event) {
         global $DB;
 
-        $data = $event->get_data();
-        $a = 2;
+        $courseid = $event->courseid ?? false;
+
+        if (!$courseid) {
+            return false;
+        }
+
+        $coursedata = new stdClass();
+        $now = new \DateTime();
+
+        $coursedata->course_id = $courseid;
+        $coursedata->last_modified = $now->getTimestamp();
+
+        $existing = $DB->get_record('moopanel_course_backups', ['course_id' => $courseid]);
+        if ($existing) {
+            $coursedata->id = $existing->id;
+            $DB->update_record('moopanel_course_backups', $coursedata);
+        } else {
+            $coursedata->last_backup = 0;
+            $DB->insert_record('moopanel_course_backups', $coursedata);
+        }
     }
 }

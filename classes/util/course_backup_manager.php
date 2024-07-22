@@ -39,6 +39,22 @@ use ZipStream\Option\Archive;
 
 class course_backup_manager {
 
+    public function course_need_backup($courseid) {
+        global $DB;
+
+        $data = $DB->get_record('moopanel_course_backups', ['course_id' => $courseid]);
+
+        if (!$data) {
+            return true;
+        }
+
+        if ($data->last_modified > $data->last_backup) {
+            return true;
+        }
+
+        return false;
+    }
+
     private function check_backup_directory($dir) {
 
         if (!file_exists($dir)) {
@@ -68,7 +84,7 @@ class course_backup_manager {
 
 
     public function create_backup($courseid, $mode) {
-        global $CFG;
+        global $CFG, $DB;
 
         $data = [
             'status' => false,
@@ -151,6 +167,21 @@ class course_backup_manager {
         $time6 = new DateTime();
         $diff5 = $time6->diff($time5);
 
+        // Update backup data in moopanel_course_backups table.
+        $lastbackup = new DateTime();
+        $backupreport = new \stdClass();
+        $backupreport->course_id = $courseid;
+        $backupreport->last_backup = $lastbackup->getTimestamp();
+        $backupreport->last_modified = 0;
+
+        $data = $DB->get_record('moopanel_course_backups', ['course_id' => $courseid]);
+        if ($data) {
+            $backupreport->id = $data->id;
+            $DB->update_record('moopanel_course_backups', $backupreport);
+        } else {
+            $DB->insert_record('moopanel_course_backups', $backupreport);
+        }
+
         return [
             'status' => true,
             'message' => 'Backup created successfully.',
@@ -181,7 +212,8 @@ class course_backup_manager {
         $fp = get_file_packer('application/vnd.moodle.backup');
         $fp->extract_to_pathname($backupfile, $path);
 
-        $rc = new restore_controller($backupdir, $courseid, backup::INTERACTIVE_NO, backup::MODE_GENERAL, 2, backup::TARGET_CURRENT_DELETING);
+        $rc = new restore_controller($backupdir, $courseid, backup::INTERACTIVE_NO,
+                backup::MODE_GENERAL, 2, backup::TARGET_CURRENT_DELETING);
 
         // Execute the pre-check to ensure everything is set up correctly.
         if (!$rc->execute_precheck()) {

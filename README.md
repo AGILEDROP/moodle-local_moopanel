@@ -707,6 +707,7 @@ Specify moodle course ids in request body for which you wan to create backups. N
   "data": {
     "instance_id": 666,
     "storage": "local",
+    "mode": "auto",
     "credentials": {
       "url": "https://test-link-for-storage.com/folder",
       "api-key": "abcd1234",
@@ -743,7 +744,7 @@ Moodle adhoc task will be created for existing course.
     },
     {
       "id": 6,
-      "message": "Course not exist."
+      "message": "Course not need backup."
     },
     {
       "id": 7,
@@ -761,9 +762,56 @@ POST [moopanel_url]/api/backups/courses/[instanceid]
 ```
 ```json
 {
+  "status":true,
   "courseid":2208,
   "link":"https:\/\/test.si\/123-2024-06-21.zip",
   "password":"abcdefgh12345678",
-  "status":true
+  "filesize": "3.25 GB"
+}
+```
+
+```http
+PUT /backups
+```
+Specify moodle course id in request body which do you want to restore.
+
+#### Request body example
+```json
+{
+    "data": {
+        "instance_id": 123,
+        "storage": "local",
+        "backup_mode": "manual",
+        "credentials": {},
+        "moodle_course_id": 2898,
+        "link": "/moopanel_course_backups/manual/course_2898__2024_07_19_16_47.mbz",
+        "password": "examplePassword",
+        "user_id": 202,
+        "backup_result_id": 303
+    }
+}
+```
+Moodle will process task ASAP. When finished task, send post request to Moopanel app.
+
+#### Response body example (step 1)
+```json
+{
+  "status": true,
+  "message": "Course backup will be restored."
+}
+```
+#### Example response (step 2)
+Send report to Moopanel for restored course.
+```http
+/api/backups/restore/instance/
+POST [moopanel_url]/api/backups/restore/instance/[instanceid]
+```
+```json
+{
+  "status":true,
+  "courseid":2208,
+  "link":"https:\/\/test.si\/123-2024-06-21.zip",
+  "password":"abcdefgh12345678",
+  "filesize": "3.25 GB"
 }
 ```

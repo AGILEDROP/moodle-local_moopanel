@@ -34,6 +34,7 @@ use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
 use local_moopanel\task\backup_course;
 use local_moopanel\task\backup_course_restore;
+use local_moopanel\util\course_backup_manager;
 
 class backups extends endpoint implements endpoint_interface {
 
@@ -108,6 +109,8 @@ class backups extends endpoint implements endpoint_interface {
         $data = [];
         $errors = [];
 
+        $backupmanager = new course_backup_manager();
+
         foreach ($courses as $course) {
             // Check if course exist in Moodle.
             $exist = $DB->record_exists('course', ['id' => $course]);
@@ -116,6 +119,16 @@ class backups extends endpoint implements endpoint_interface {
                 $errors[] = [
                         "id" => $course,
                         "message" => "Course not exist.",
+                ];
+                continue;
+            }
+
+            // Check if course need backup.
+            $needbackkup = $backupmanager->course_need_backup($course);
+            if (!$needbackkup) {
+                $errors[] = [
+                        "id" => $course,
+                        "message" => "Course not need backup.",
                 ];
                 continue;
             }
