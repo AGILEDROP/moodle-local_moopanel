@@ -231,4 +231,65 @@ class course_backup_manager {
 
         return true;
     }
+
+    private function file_size_convert($bytes) {
+        $bytes = floatval($bytes);
+        $arbytes = [
+                0 => [
+                        "UNIT" => "TB",
+                        "VALUE" => pow(1024, 4),
+                ],
+                1 => [
+                        "UNIT" => "GB",
+                        "VALUE" => pow(1024, 3),
+                ],
+                2 => [
+                        "UNIT" => "MB",
+                        "VALUE" => pow(1024, 2),
+                ],
+                3 => [
+                        "UNIT" => "KB",
+                        "VALUE" => 1024,
+                ],
+                4 => [
+                        "UNIT" => "B",
+                        "VALUE" => 1,
+                ],
+        ];
+
+        foreach ($arbytes as $aritem) {
+            if ($bytes >= $aritem["VALUE"]) {
+                $result = $bytes / $aritem["VALUE"];
+                $result = str_replace(".", ",", strval(round($result, 2)));
+                $result .= " " . $aritem["UNIT"];
+                break;
+            }
+        }
+        return $result;
+    }
+
+    public function available_backups($courseid) {
+        $data = [];
+
+        for ($i = 1; $i < 6; $i++) {
+            $date = new DateTime();
+            $now = $date->getTimestamp();
+
+            $randtimestamp = rand($now - 1000000, $now);
+            $randsize = rand(999, 9999999999);
+
+            $date->setTimestamp($randtimestamp);
+
+            $row = [
+                    'num' => $i,
+                    'backup' => $date->format('Y - m -d  [H:i]'),
+                    'filesize' => $this->file_size_convert($randsize),
+            ];
+
+            $data['auto'][] = $row;
+            $data['manual'][] = $row;
+        }
+
+        return $data;
+    }
 }
