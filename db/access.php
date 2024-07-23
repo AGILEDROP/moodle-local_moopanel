@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version information for local_moopanel plugin.
+ * This file contains the capabilities used by the local_moopanel module.
  *
- * File         version.php
+ * File         access.php
  * Encoding     UTF-8
  *
  * @package     local_moopanel
@@ -27,11 +27,15 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+defined('MOODLE_INTERNAL') || die;
 
-$plugin = new stdClass();
-$plugin->version     = 2024072300;
-$plugin->requires    = 2022041900;      // YYYYMMDDHH (This is the release version for Moodle 4.0).
-$plugin->component   = 'local_moopanel';
-$plugin->release     = '1.0.0';
-$plugin->dependencies = [];
+$capabilities = [
+    // Whether the user can see list of course backups.
+        'local/moopanel:coursebackupsview' => [
+                'captype' => 'read',
+                'contextlevel' => CONTEXT_SYSTEM,
+                'archetypes' => [
+                        'manager' => CAP_ALLOW,
+                ],
+        ],
+];

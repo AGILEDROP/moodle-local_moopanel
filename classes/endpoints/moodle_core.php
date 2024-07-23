@@ -105,11 +105,6 @@ class moodle_core extends endpoint implements endpoint_interface {
         $this->response->add_body_key('update_log', $logs);
     }
 
-
-    private function post_request() {
-        $this->response->send_error(STATUS_501, 'Method not implemented yet.');
-    }
-
     private function resolve_update_type($currentversion, $newversion) {
         if (!$newversion) {
             return null;
@@ -138,4 +133,9 @@ class moodle_core extends endpoint implements endpoint_interface {
 
         return 'core-minor';
     }
+
+    private function post_request() {
+        $this->response->send_error(STATUS_501, 'Method not implemented yet.');
+    }
+
 }
