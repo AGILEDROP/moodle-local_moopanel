@@ -106,21 +106,23 @@ class plugin_manager {
         return $report;
     }
 
-    private function download_zip_file($zipurl, $storage) {
+    public function download_zip_file($zipurl, $storage) {
+        global $CFG, $USER;
 
         $handler = curl_init();
         curl_setopt($handler, CURLOPT_URL, $zipurl);
         curl_setopt($handler, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($handler, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($handler, CURLOPT_TIMEOUT, 30);
+        curl_setopt($handler, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($handler, CURLOPT_TIMEOUT, 100);
 
         $response = curl_exec ($handler);
+
+        $statuscode = curl_getinfo($handler, CURLINFO_HTTP_CODE) ?? false;
 
         if (!$response) {
             return false;
         }
-
-        $statuscode = curl_getinfo($handler, CURLINFO_HTTP_CODE);
 
         if ($statuscode != 200) {
             return false;

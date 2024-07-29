@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Moopanel API error handler class.
+ * Log request and response messages.
  *
- * File         error_handler.php
+ * File         logger.php
  * Encoding     UTF-8
  *
  * @package     local_moopanel
@@ -29,20 +29,25 @@
 
 namespace local_moopanel;
 
-use Throwable;
+use DateTime;
+use stdClass;
 
-class error_handler {
+class logger {
 
-    public static function throw_error(Throwable $exception = null) : void {
-        if ($exception) {
-            http_response_code(500);
-            echo json_encode([
-                'code' => $exception->getCode(),
-                'message' => $exception->getMessage(),
-                'file' => $exception->getFile(),
-                'line' => $exception->getLine(),
-                'trace' => $exception->getTrace(),
-            ]);
-        }
+    public function log($type, $endpoint, $method, $parameters, $statuscode, $body) {
+        global $DB;
+
+        $now = new DateTime();
+        $log = new stdClass();
+
+        $log->timestamp = $now->getTimestamp();
+        $log->type = $type;
+        $log->endpoint = $endpoint;
+        $log->method = $method;
+        $log->parameters = $parameters;
+        $log->statuscode = $statuscode;
+        $log->body = $body;
+
+        $DB->insert_record('moopanel_logs', $log);
     }
 }

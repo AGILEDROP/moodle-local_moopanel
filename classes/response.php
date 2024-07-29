@@ -44,9 +44,11 @@ class response {
 
     public $body;
 
-    public $errors;
+    public $error;
 
     public $format;
+
+    private $logger;
 
     public function __construct() {
         $this->set_status(200);
@@ -54,7 +56,8 @@ class response {
         $this->add_header('Content-Type', 'application/json');
         $this->set_format('json');
         $this->body = new stdClass();
-        $this->errors = [];
+        $this->error = null;
+        $this->logger = new logger();
     }
 
     public function set_status($status) {
@@ -98,19 +101,16 @@ class response {
     }
 
     public function get_body_key($key) {
-        return $this->body->$key;
+        $value = $this->body->$key ?? false;
+        return $value;
     }
 
-    public function set_error($key, $value) {
-        $this->errors[$key] = $value;
+    public function set_error($value) {
+        $this->error = $value;
     }
 
-    public function set_errors($errors) {
-        $this->errors = $errors;
-    }
-
-    public function get_errors() {
-        return $this->errors;
+    public function get_error() {
+        return $this->error;
     }
 
     public function print_headers() {
@@ -144,16 +144,31 @@ class response {
 
     public function send_error($status, $errormsg) {
         $this->set_status($status);
+        $this->set_error($errormsg);
         $this->add_body_key('error', $errormsg);
 
         $this->send();
     }
 
     public function send() {
+        $error = $this->get_error();
+        $body = $this->encode_body();
+
+        if ($error) {
+            $this->logger->log(
+                    'error',
+                    '',
+                    '',
+                    '',
+                    $this->get_status(),
+                    $error
+            );
+        }
+
         http_response_code($this->status);
 
         $this->print_headers();
-        echo $this->encode_body();
+        echo $body;
 
         die();
     }
@@ -176,11 +191,20 @@ class response {
 
         curl_close($handler);
 
+
         if ($statuscode != 200) {
-            return false;
+            $this->logger->log(
+                    'moopanel error',
+                    $url,
+                    'POST',
+                    '',
+                    $statuscode,
+                    json_encode($response),
+            );
+            //return false;
         }
 
-        return true;
+        return $statuscode;
     }
 
     /**
@@ -191,7 +215,7 @@ class response {
      * @param mixed $body Message body (html/json/xml/string).
      * @return void
      */
-    public function send_to_email($to, $subject, $body) {
+    public function send_to_email($to, $subject) {
 
         $from = core_user::get_noreply_user();
         $replyto = core_user::get_noreply_user();
@@ -246,6 +270,21 @@ class response {
         $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
 
         mail($to, $subject, $body, $headers);
+    }
+
+    private function log_error() {
+        global $DB;
+
+        $now = new \DateTime();
+        $log = new stdClass();
+        $log->timestamp = $now->getTimestamp();
+        $log->type = 'error';
+        $log->endpoint = '';
+        $log->method = '';
+        $log->statuscode = $this->get_status();
+        $log->body = (string)$this->body->error;
+
+        $DB->insert_record('moopanel_logs', $log);
     }
 
 }

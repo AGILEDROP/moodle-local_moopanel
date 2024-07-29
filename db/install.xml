@@ -18,5 +18,21 @@
             </KEYS>
         </TABLE>
 
+        <TABLE NAME="moopanel_logs" COMMENT="Mapping request and response logs.">
+            <FIELDS>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" COMMENT="Id"/>
+                <FIELD NAME="timestamp" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Timestamp"/>
+                <FIELD NAME="type" TYPE="text" LENGTH="20" NOTNULL="false" SEQUENCE="false" COMMENT="Reqoest or response"/>
+                <FIELD NAME="endpoint" TYPE="text" LENGTH="100" NOTNULL="false" SEQUENCE="false" COMMENT="Request or response"/>
+                <FIELD NAME="method" TYPE="text" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Method"/>
+                <FIELD NAME="parameters" TYPE="text" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Parameters"/>
+                <FIELD NAME="statuscode" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Status code"/>
+                <FIELD NAME="body" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Body or message"/>
+            </FIELDS>
+            <KEYS>
+                <KEY NAME="id" TYPE="primary" FIELDS="id"/>
+            </KEYS>
+        </TABLE>
+
     </TABLES>
 </XMLDB>
