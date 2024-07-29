@@ -73,6 +73,7 @@ define('STATUS_503', 503);
  * MooPanel API definition class.
  */
 class api {
+    public logger $logger;
 
     public request $request;
 
@@ -85,6 +86,7 @@ class api {
     private $endpoint;
 
     public function __construct() {
+        $this->logger = new logger();
         $this->request = new request();
         $this->response = new response();
 
@@ -131,6 +133,16 @@ class api {
             // Set request and response to endpoint controller class.
             $this->endpoint->set_request($this->request);
             $this->endpoint->set_response($this->response);
+
+            // Log request.
+            $this->logger->log(
+                    'request',
+                    $this->request->get_path(),
+                    $this->request->get_method(),
+                    json_encode($this->request->get_parameters()),
+                    200,
+                    json_encode($this->request->get_payload()),
+            );
 
             // Execute request and build response.
             $this->endpoint->execute_request();

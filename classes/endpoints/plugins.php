@@ -29,6 +29,7 @@
 
 namespace local_moopanel\endpoints;
 
+use core\task\manager;
 use core\update\checker;
 use core_plugin_manager;
 use core_user;
@@ -186,9 +187,9 @@ class plugins extends endpoint implements endpoint_interface {
 
         // Set run task ASAP.
         $task->set_next_run_time(time() - 1);
-        \core\task\manager::queue_adhoc_task($task, true);
+        manager::queue_adhoc_task($task, true);
 
-        $taskwillrun = \core\task\manager::get_adhoc_tasks('\local_moopanel\task\plugins_update');
+        $taskwillrun = manager::get_adhoc_tasks('\local_moopanel\task\plugins_update');
 
         if ($taskwillrun) {
             $task = reset($taskwillrun);
@@ -241,9 +242,9 @@ class plugins extends endpoint implements endpoint_interface {
 
         // Set run task ASAP.
         $task->set_next_run_time(time() - 1);
-        \core\task\manager::queue_adhoc_task($task, true);
+        manager::queue_adhoc_task($task, true);
 
-        $taskwillrun = \core\task\manager::get_adhoc_tasks('\local_moopanel\task\plugins_install_zip');
+        $taskwillrun = manager::get_adhoc_tasks('\local_moopanel\task\plugins_install_zip');
 
         if ($taskwillrun) {
             $task = reset($taskwillrun);

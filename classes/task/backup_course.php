@@ -35,6 +35,10 @@ use local_moopanel\util\course_backup_manager;
 
 class backup_course extends adhoc_task {
 
+    public function get_name() {
+        return get_string('task:backupcourse', 'local_moopanel');
+    }
+
     public function execute() {
         global $CFG, $DB;
 
@@ -80,7 +84,7 @@ class backup_course extends adhoc_task {
         // Send response to Moo-panel app.
         $send = $response->post_to_url($returnurl);
 
-        $response->send_to_email('test@test.com', 'Course backup', $response->body);
+        $response->send_to_email('uros.virag@agiledrop.com', 'Course backup - status ' . $send);
 
         mtrace('Execute backup plan      = ' . $backup['diff1']);
         mtrace('Copy mbz backup file     = ' . $backup['diff2']);

@@ -43,5 +43,8 @@ $string['label:iprestrict_help'] = 'Enter IP addresses from which API can be use
 
 // Tasks.
 $string['task:adminpresetscreate'] = 'Moopanel - Create a new admin preset';
+$string['task:backupcourse'] = 'Moopanel - backup course';
+$string['task:backupcourserestore'] = 'Moopanel - restore course backup';
+$string['task:coreupdate'] = 'Moopanel - update core';
 $string['task:pluginsupdate'] = 'Moopanel - Update plugins';
 $string['task:pluginsinstallzip'] = 'Moopanel - Install plugins from zip files';

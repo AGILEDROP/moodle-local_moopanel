@@ -35,9 +35,16 @@ function local_moopanel_before_footer() {
     // ToDo - Quick test some functionality. Will be removed.
 
     $manager = new course_backup_manager();
+    $pluginmanager = new \local_moopanel\util\plugin_manager();
 
-    $need = $manager->course_need_backup(2899);
+    //$storage = make_temp_directory('moopanel_core_update');
+    //$pluginmanager->download_zip_file('https://download.moodle.org/download.php/direct/stable403/moodle-latest-403.zip', $storage);
 
+    $a = 4;
+
+    // $output = shell_exec('php test.php');
+
+    $a = 2;
 }
 
 /**

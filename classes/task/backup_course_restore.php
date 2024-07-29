@@ -35,6 +35,10 @@ use local_moopanel\util\course_backup_manager;
 
 class backup_course_restore extends adhoc_task {
 
+    public function get_name() {
+        return get_string('task:backupcourserestore', 'local_moopanel');
+    }
+
     public function execute() {
         global $CFG, $DB;
 

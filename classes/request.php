@@ -29,6 +29,9 @@
 
 namespace local_moopanel;
 
+use DateTime;
+use stdClass;
+
 /**
  * MooPanel API request definition class.
  */
