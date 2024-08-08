@@ -30,6 +30,7 @@
 namespace local_moopanel\task;
 
 use core\task\adhoc_task;
+use core\task\manager;
 use core_plugin_manager;
 use local_moopanel\response;
 use local_moopanel\util\plugin_manager;
@@ -39,7 +40,6 @@ class plugins_update extends adhoc_task {
     public function get_name() {
         return get_string('task:pluginsupdate', 'local_moopanel');
     }
-
 
     public function execute() {
         $id = $this->get_id();
@@ -133,7 +133,11 @@ class plugins_update extends adhoc_task {
                 $updateprocess['error'] = $report['error'];
             }
 
-            $msg = $update->component . ' status: ' . $updateprocess['status'] . ', error: ' . $updateprocess['error'];
+            $msg = $update->component . ' status: ' . $updateprocess['status'];
+            if ($updateprocess['error']) {
+                $msg .= ', error: ' . $updateprocess['error'];
+            }
+
             mtrace($msg);
             $data[] = $updateprocess;
         }
@@ -141,6 +145,12 @@ class plugins_update extends adhoc_task {
         mtrace("################################################################################");
 
         $response->add_body_key('updates', $data);
+
+        $noncoreupgrade = new upgrade_noncore();
+
+        // Set run task ASAP.
+        $noncoreupgrade->set_next_run_time(time() - 1);
+        manager::queue_adhoc_task($noncoreupgrade, true);
 
         // Send response to Moo-panel app.
         $send = $response->post_to_url($url);

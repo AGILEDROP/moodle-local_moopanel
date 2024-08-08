@@ -31,6 +31,7 @@ namespace local_moopanel\endpoints;
 
 use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
+use local_moopanel\logger;
 
 class tasks extends endpoint implements endpoint_interface {
 
@@ -52,6 +53,8 @@ class tasks extends endpoint implements endpoint_interface {
     private function check_adhoc_task_status() {
         global $DB;
 
+        $logger = new logger();
+
         $taskid = $this->request->parameters->id ?? false;
         if (!$taskid) {
             $this->response->send_error(STATUS_400, 'No task id specified.');
@@ -72,34 +75,32 @@ class tasks extends endpoint implements endpoint_interface {
             if ($task->faildelay) {
                 // Task was failed.
                 $report = $this->get_task_log($taskid, $tasktype);
-            }
+                $message = $report['message'] ?? 'Task was failed.';
+                $this->response->add_body_key('status', 3);
+                $this->response->add_body_key('error', 'Task was failed.');
 
-            if ($task->timestarted) {
-                // Task is running.
+            } else {
+                // Task is running or waiting to run.
                 $this->response->add_body_key('status', 2);
                 $this->response->add_body_key('error', '');
-                return;
             }
         } else {
-            // Task is completed.
+            // No adhoc Task.
             $report = $this->get_task_log($taskid, $tasktype);
-
-            if (!$report) {
-                $this->response->send_error(STATUS_500, 'There is no log data for selected task.');
-            }
-
-            $failed = $report['result'];
-
-            if (!$failed) {
-                // Task finished successfully.
-                $this->response->add_body_key('status', 1);
-                $this->response->add_body_key('error', '');
+            $taskstatus = $report['result'] ?? false;
+            if ($taskstatus) {
+                $status = 1; // Task finished sucessfully and log exist.
+                $message  = $report['message'] ?? 'Task finished with no log.';
             } else {
-                // Task failed.
-                $this->response->add_body_key('status', 3);
-                $this->response->add_body_key('error', $report['message']);
+                $status = 4; // No log data.
+                $message = 'There is no log data for selected task.';
             }
+
+            $this->response->add_body_key('status', $status);
+            $this->response->add_body_key('error', $message);
         }
+
+        $logger->log('response', 'tasks/check', $this->request->get_method(), json_encode($this->request->parameters), $this->response->get_status(), $this->response->encode_body());
     }
 
     private function get_task_log($taskid, $tasktype) {
@@ -113,6 +114,10 @@ class tasks extends endpoint implements endpoint_interface {
         ];
 
         $logs = $DB->get_records('task_log', $conditions, 'ID DESC');
+
+        if (!$logs) {
+            return false;
+        }
 
         foreach ($logs as $log) {
             $taskreport = $log->output;

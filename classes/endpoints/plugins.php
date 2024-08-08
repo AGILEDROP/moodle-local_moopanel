@@ -43,8 +43,6 @@ use moodle_url;
 
 class plugins extends endpoint implements endpoint_interface {
 
-    private $countupdated;
-
     public function allowed_methods() {
         return ['GET', 'POST'];
     }
@@ -62,8 +60,6 @@ class plugins extends endpoint implements endpoint_interface {
         switch ($this->request->method) {
             case 'POST':
 
-                $this->countupdated = 0;
-
                 switch ($path) {
                     case 'plugins/updates':
                         $this->post_update();
@@ -76,10 +72,6 @@ class plugins extends endpoint implements endpoint_interface {
                         break;
                 }
 
-                if ($this->countupdated) {
-                    $mustgotourl = new moodle_url($CFG->wwwroot.'/local/moopanel/pages/upgrade_noncore.php', []);
-                    $backgroundtask->run($mustgotourl);
-                }
                 break;
 
             case 'GET':

@@ -40,6 +40,22 @@ class logger {
         $now = new DateTime();
         $log = new stdClass();
 
+        if (is_array($parameters)) {
+            $parameters = json_encode($parameters);
+        }
+
+        if (is_object($parameters)) {
+            $parameters = json_encode($parameters);
+        }
+
+        if (is_array($body)) {
+            $body = json_encode($body);
+        }
+
+        if (is_object($body)) {
+            $body = json_encode($body);
+        }
+
         $log->timestamp = $now->getTimestamp();
         $log->type = $type;
         $log->endpoint = $endpoint;

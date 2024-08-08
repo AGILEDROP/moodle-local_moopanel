@@ -154,16 +154,14 @@ class response {
         $error = $this->get_error();
         $body = $this->encode_body();
 
-        if ($error) {
-            $this->logger->log(
-                    'error',
-                    '',
-                    '',
-                    '',
-                    $this->get_status(),
-                    $error
-            );
-        }
+        $this->logger->log(
+                ($error) ? 'error': 'response',
+                '',
+                '',
+                '',
+                $this->get_status(),
+                $body,
+        );
 
         http_response_code($this->status);
 
@@ -191,18 +189,14 @@ class response {
 
         curl_close($handler);
 
-
-        if ($statuscode != 200) {
-            $this->logger->log(
-                    'moopanel error',
-                    $url,
-                    'POST',
-                    '',
-                    $statuscode,
-                    json_encode($response),
-            );
-            //return false;
-        }
+        $this->logger->log(
+                'adhoc_task_response',
+                $url,
+                'POST',
+                '',
+                $this->get_status(),
+                $this->encode_body(),
+        );
 
         return $statuscode;
     }

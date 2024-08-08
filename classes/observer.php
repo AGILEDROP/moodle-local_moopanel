@@ -30,6 +30,7 @@
 namespace local_moopanel;
 
 use core\event\base;
+use core\task\adhoc_task;
 use stdClass;
 
 /**

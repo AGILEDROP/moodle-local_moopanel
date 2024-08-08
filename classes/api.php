@@ -103,6 +103,17 @@ class api {
                 $this->response->send_error(STATUS_423, 'API is disabled.');
             }
 
+            // Log request.
+            //$type, $endpoint, $method, $parameters, $statuscode, $body
+            $this->logger->log(
+                    'request',
+                    $_SERVER['REQUEST_URI'],
+                    $_SERVER['REQUEST_METHOD'],
+                    $_SERVER['REQUEST_URI'],
+                    200,
+                    file_get_contents('php://input'),
+            );
+
             // Get request headers.
             $this->parse_request_headers($_SERVER);
 
@@ -133,16 +144,6 @@ class api {
             // Set request and response to endpoint controller class.
             $this->endpoint->set_request($this->request);
             $this->endpoint->set_response($this->response);
-
-            // Log request.
-            $this->logger->log(
-                    'request',
-                    $this->request->get_path(),
-                    $this->request->get_method(),
-                    json_encode($this->request->get_parameters()),
-                    200,
-                    json_encode($this->request->get_payload()),
-            );
 
             // Execute request and build response.
             $this->endpoint->execute_request();
@@ -216,7 +217,7 @@ class api {
             // Create endpoint controller.
             $this->endpoint = new $classname();
         } else {
-            $this->response->send_error(STATUS_404, 'Endpoint not found.');
+            $this->response->send_error(STATUS_404, 'Endpoint \'' . $classname . '\' not found.');
         }
     }
 
