@@ -60,20 +60,26 @@ class backup_course_restore extends adhoc_task {
 
         $response->add_body_key('user_id', $userid);
         $response->add_body_key('backup_result_id', $backupid);
+        $response->add_body_key('courseid', $courseid);
 
         if ($storage == 'local') {
-            $backupfile = $CFG->dataroot . $link;
+            if (!file_exists($CFG->dataroot . '/moopanel_course_backups/' . $link)) {
+                $response->add_body_key('message', 'Backup file not found.');
+                $response->post_to_url($returnurl);
+                return false;
+            }
+            $backupfile = $backupmanager->unzip_local_file($link, $password);
         } else {
             $backupfile = false;
         }
 
         if (!file_exists($backupfile)) {
-            $response->add_body_key('message', 'Backup file not found.');
+            $response->add_body_key('message', 'Password incorrect.');
             $response->post_to_url($returnurl);
-            die();
+            return false;
         }
 
-        $restored = $backupmanager->restore_backup($backupfile, $courseid);
+        $restored = $backupmanager->restore_backup($backupfile, $courseid, $password);
         if ($restored) {
             $response->add_body_key('status', true);
             $response->add_body_key('message', 'Backup restored.');

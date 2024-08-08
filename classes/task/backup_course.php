@@ -65,11 +65,11 @@ class backup_course extends adhoc_task {
             $response->add_body_key('message', $msg);
             // Send response to Moo-panel app.
             $send = $response->post_to_url($returnurl);
-            die;
+            return false;
         }
 
         if ($storage == 'local') {
-            $url = '/moopanel_course_backups/' . $mode . '/' . $backup['filename'];
+            $url = $mode . '/' . $backup['filename'];
         } else {
             // ToDo - copy backup file to external storage and delete it from local storage.
             $url = $storage . '/' . $mode . '/' . $backup['filename'];
@@ -83,8 +83,6 @@ class backup_course extends adhoc_task {
 
         // Send response to Moo-panel app.
         $send = $response->post_to_url($returnurl);
-
-        $response->send_to_email('uros.virag@agiledrop.com', 'Course backup - status ' . $send);
 
         mtrace('Execute backup plan      = ' . $backup['diff1']);
         mtrace('Copy mbz backup file     = ' . $backup['diff2']);

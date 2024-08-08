@@ -29,9 +29,6 @@
 
 namespace local_moopanel;
 
-use DateTime;
-use stdClass;
-
 /**
  * MooPanel API request definition class.
  */
@@ -49,12 +46,15 @@ class request {
 
     public $payload;
 
+    public $logger;
+
     public function __construct() {
         $this->set_method('GET');
         $this->headers = [];
         $this->path = '';
         $this->parameters = [];
         $this->payload = [];
+        $this->logger = new logger();
     }
 
     public function set_hostname($hostname = null) {

@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Utility page - upgrade plugins database.
+ * Adhoc task class - upgrade noncore.
  *
- * File         update_progress_confirm.php
+ * File         upgrade_noncore.php
  * Encoding     UTF-8
  *
  * @package     local_moopanel
@@ -27,22 +27,30 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once(__DIR__ . '/../../../config.php');
+namespace local_moopanel\task;
 
-$url = new moodle_url('/local/moopanel/pages/upgrade_noncore.php');
+use core\task\adhoc_task;
+use core_user;
 
-$USER = core_user::get_user(2);
-$id = $USER->id;
+class upgrade_noncore extends adhoc_task {
 
-$PAGE->set_url($url);
-$PAGE->set_context(context_system::instance());
+    public function get_name() {
+        return get_string('task:upgradenoncore', 'local_moopanel');
+    }
 
-// Include needle library.
-require_once($CFG->dirroot.'/lib/adminlib.php');
-require_once($CFG->dirroot.'/lib/pagelib.php');
-require_once($CFG->dirroot.'/lib/moodlelib.php');
-require_once($CFG->dirroot.'/lib/upgradelib.php');
+    public function execute() {
+        global $CFG, $USER;
 
-upgrade_noncore(true);
+        $USER = core_user::get_user(2);
+        $id = $USER->id;
 
-$defaultsettings = admin_apply_default_settings(null, false);
+        // Include needle library.
+        require_once($CFG->dirroot.'/lib/adminlib.php');
+        require_once($CFG->dirroot.'/lib/pagelib.php');
+        require_once($CFG->dirroot.'/lib/moodlelib.php');
+        require_once($CFG->dirroot.'/lib/upgradelib.php');
+
+        upgrade_noncore(true);
+    }
+
+}

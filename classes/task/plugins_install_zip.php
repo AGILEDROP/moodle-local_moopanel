@@ -30,6 +30,7 @@
 namespace local_moopanel\task;
 
 use core\task\adhoc_task;
+use core\task\manager;
 use core_plugin_manager;
 use local_moopanel\response;
 use local_moopanel\util\plugin_manager;
@@ -76,15 +77,25 @@ class plugins_install_zip extends adhoc_task {
                 'link' => $update,
                 'status' => $report['status'],
                 'component' => $component,
-                'version' => $version,
+                'version' => (string)$version,
                 'error' => $report['error'],
             ];
 
-            $msg = $update . ' status: ' . $report['status'] . ', error: ' . $report['error'];
+            $msg = $update . ' status: ' . $report['status'];
+            if ($report['error']) {
+                $msg .= ', error: ' . $report['error'];
+            }
             mtrace($msg);
         }
 
         mtrace("################################################################################");
+
+
+        $noncoreupgrade = new upgrade_noncore();
+
+        // Set run task ASAP.
+        $noncoreupgrade->set_next_run_time(time() - 1);
+        manager::queue_adhoc_task($noncoreupgrade, true);
 
         $response->add_body_key('updates', $data);
 

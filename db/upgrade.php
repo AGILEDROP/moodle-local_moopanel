@@ -28,6 +28,8 @@
  */
 
 function xmldb_local_moopanel_upgrade($oldversion) {
+    global $CFG, $DB;
+
     $moopanelurl = get_config('local_moopanel', 'moopanelurl');
 
     if (!$moopanelurl) {
@@ -35,6 +37,21 @@ function xmldb_local_moopanel_upgrade($oldversion) {
         $moopanelurl = 'https://mdcenter.uni-lj.si';
 
         set_config('moopanelurl', $moopanelurl, 'local_moopanel');
+    }
+
+    $dbman = $DB->get_manager();
+
+    $tables = [
+        'moopanel_logs',
+        //'moopanel_course_backups',
+    ];
+
+    foreach ($tables as $table) {
+        $exist = $dbman->table_exists($table);
+
+        if ($exist) {
+            $DB->execute("TRUNCATE TABLE {" . $table . "}");
+        }
     }
 
     return true;

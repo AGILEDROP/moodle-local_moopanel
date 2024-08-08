@@ -35,7 +35,6 @@ use DateTime;
 use Exception;
 use restore_controller;
 use ZipArchive;
-use ZipStream\Option\Archive;
 
 class course_backup_manager {
 
@@ -78,10 +77,15 @@ class course_backup_manager {
         return $filename;
     }
 
-    private function generate_password() {
-        return "abcd1234";
+    public function generate_password($length = 16) {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ :;?!|/';
+        $characterslength = strlen($characters);
+        $password = '';
+        for ($i = 0; $i < $length; $i++) {
+            $password .= $characters[random_int(0, $characterslength - 1)];
+        }
+        return $password;
     }
-
 
     public function create_backup($courseid, $mode) {
         global $CFG, $DB;
@@ -106,12 +110,13 @@ class course_backup_manager {
         $bc = new backup_controller(backup::TYPE_1COURSE, $courseid, backup::FORMAT_MOODLE,
                 backup::INTERACTIVE_NO, backup::MODE_GENERAL, 2);
 
-        $zipfilename = $this->generate_filename($courseid);
-        $zipfilename .= '.mbz';
-        $zipfilepath = $destination . $zipfilename;
+        $filename = $this->generate_filename($courseid);
+        $tmpfilename = $filename . '.mbz';
+        $zipfilename = $filename . '.zip';
+
         $password = $this->generate_password();
 
-        $bc->get_plan()->get_setting('filename')->set_value($zipfilename);
+        $bc->get_plan()->get_setting('filename')->set_value($tmpfilename);
 
         $time1 = new DateTime();
 
@@ -129,7 +134,7 @@ class course_backup_manager {
             return $data;
         }
 
-        $file->copy_content_to($zipfilepath);
+        $file->copy_content_to($destination . $tmpfilename);
 
         $time3 = new DateTime();
         $diff2 = $time3->diff($time2);
@@ -142,44 +147,48 @@ class course_backup_manager {
         $time4 = new DateTime();
         $diff3 = $time4->diff($time3);
 
-        /*
-        $fileexist = file_exists($zipfilepath);
         $zip = new ZipArchive();
-        if (! $zip->open($zipfilepath)) {
+        if (!$zip->open($destination . $zipfilename, ZipArchive::CREATE)) {
             $data['message'] = 'Problem while creating backup zip file.';
             return $data;
         }
 
-        // $zip->addFile($tempfilepath, $tempfilename);
+        // $zip->open($destination . $zipfilename);
+        $zip->addFile($destination . $tmpfilename, $tmpfilename);
         $zip->setPassword($password);
-        $zip->setEncryptionName($zipfilepath, ZipArchive::EM_AES_256);
+
+        $a = 2;
+        $zip->setEncryptionName($tmpfilename, ZipArchive::EM_AES_256, $password);
         $zip->close();
-        */
 
         $time5 = new DateTime();
         $diff4 = $time5->diff($time4);
 
-        if (!file_exists($zipfilepath)) {
+        if (!file_exists($destination . $zipfilename)) {
             $data['message'] = 'Problem while copying backup zip file.';
             return $data;
         }
 
+        unlink($destination . $tmpfilename);
+
         $time6 = new DateTime();
         $diff5 = $time6->diff($time5);
 
-        // Update backup data in moopanel_course_backups table.
-        $lastbackup = new DateTime();
-        $backupreport = new \stdClass();
-        $backupreport->course_id = $courseid;
-        $backupreport->last_backup = $lastbackup->getTimestamp();
-        $backupreport->last_modified = 0;
+        // Update backup data in moopanel_course_backups table for automated backups.
+        if ($mode == 'auto') {
+            $lastbackup = new DateTime();
+            $backupreport = new \stdClass();
+            $backupreport->course_id = $courseid;
+            $backupreport->last_backup = $lastbackup->getTimestamp();
+            $backupreport->last_modified = 0;
 
-        $data = $DB->get_record('moopanel_course_backups', ['course_id' => $courseid]);
-        if ($data) {
-            $backupreport->id = $data->id;
-            $DB->update_record('moopanel_course_backups', $backupreport);
-        } else {
-            $DB->insert_record('moopanel_course_backups', $backupreport);
+            $data = $DB->get_record('moopanel_course_backups', ['course_id' => $courseid]);
+            if ($data) {
+                $backupreport->id = $data->id;
+                $DB->update_record('moopanel_course_backups', $backupreport);
+            } else {
+                $DB->insert_record('moopanel_course_backups', $backupreport);
+            }
         }
 
         return [
@@ -196,8 +205,10 @@ class course_backup_manager {
         ];
     }
 
-    public function restore_backup($backupfile, $courseid) {
+    public function restore_backup($backupfile, $courseid, $password) {
         global $CFG;
+
+        $dir = $CFG->dataroot . '/moopanel_course_backups/restore/';
 
         if (!file_exists($backupfile)) {
             return false;
@@ -223,13 +234,39 @@ class course_backup_manager {
         try {
             $rc->execute_plan();
             $rc->destroy();
+            unlink($backupfile);
         } catch (Exception $e) {
             $msg = $e->getMessage();
-
+            unlink($backupfile);
             return false;
         }
 
         return true;
+    }
+
+    public function unzip_local_file($backupfile, $password) {
+        global $CFG;
+
+        if (!file_exists($CFG->dataroot . '/moopanel_course_backups/' . $backupfile)) {
+            return false;
+        }
+
+        $dir = $CFG->dataroot . '/moopanel_course_backups/restore/';
+
+        $zip = new ZipArchive();
+
+        if ($zip->open($CFG->dataroot . '/moopanel_course_backups/' .$backupfile)) {
+            $zip->setPassword($password);
+            $zip->extractTo($dir);
+            $file = $zip->getNameIndex(0);
+            $zip->close();
+        }
+
+        if (!file_exists($dir . $file)) {
+            return false;
+        }
+
+        return $dir . $file;
     }
 
     private function file_size_convert($bytes) {
@@ -291,5 +328,22 @@ class course_backup_manager {
         }
 
         return $data;
+    }
+
+    public function get_existing_backup_delete_task_id($existingtasks, $backupid) {
+
+        foreach ($existingtasks as $existingtask) {
+            $a = 2;
+            $customdata = $existingtask->get_custom_data();
+            $backup = $customdata->backup;
+
+            $id = $backup->backup_result_id;
+
+            if ($id == $backupid) {
+                return $existingtask->get_id();
+            }
+        }
+
+        return null;
     }
 }

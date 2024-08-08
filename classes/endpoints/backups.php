@@ -33,6 +33,7 @@ use core\task\manager;
 use local_moopanel\endpoint;
 use local_moopanel\endpoint_interface;
 use local_moopanel\task\backup_course;
+use local_moopanel\task\backup_course_delete;
 use local_moopanel\task\backup_course_restore;
 use local_moopanel\util\course_backup_manager;
 
@@ -117,20 +118,24 @@ class backups extends endpoint implements endpoint_interface {
 
             if (!$exist) {
                 $errors[] = [
-                        "id" => $course,
-                        "message" => "Course not exist.",
+                    'id' => $course,
+                    'status' => 404,
+                    'message' => 'Course not exist.',
                 ];
                 continue;
             }
 
-            // Check if course need backup.
-            $needbackkup = $backupmanager->course_need_backup($course);
-            if (!$needbackkup) {
-                $errors[] = [
-                        "id" => $course,
-                        "message" => "Course not need backup.",
-                ];
-                continue;
+            // Check if course need automated backup.
+            if ($mode == "auto") {
+                $needbackkup = $backupmanager->course_need_backup($course);
+                if (!$needbackkup) {
+                    $errors[] = [
+                        'id' => $course,
+                        'status' => 204,
+                        'message' => 'Course not need backup.',
+                    ];
+                    continue;
+                }
             }
 
             // Define Adhoc task for create course backup.
@@ -148,14 +153,22 @@ class backups extends endpoint implements endpoint_interface {
             ];
 
             $task->set_custom_data((object) $coustomdata);
+            if (method_exists($task, 'set_attempts_available')) {
+                $task->set_attempts_available(1);
+            }
 
             // Set run task ASAP.
             $task->set_next_run_time(time() - 1);
-            manager::queue_adhoc_task($task, true);
+            manager::queue_adhoc_task($task, false);
+
+            $existingtasks = manager::get_adhoc_tasks('\local_moopanel\task\backup_course');
+            $queedtask = end($existingtasks);
 
             $data[] = [
-                    "id" => $course,
-                    "message" => "Backup will be created.",
+                'id' => $course,
+                'status' => 200,
+                'moodle_job_id' => $queedtask->get_id() ?? null,
+                'message' => 'Backup will be created.',
             ];
         }
 
@@ -171,27 +184,99 @@ class backups extends endpoint implements endpoint_interface {
     private function delete_backups() {
         global $CFG;
 
-        $backups = $this->request->payload->backups ?? [];
+        $userid = $this->request->payload->user_id ?? false;
+
+        $instanceid = $this->request->payload->instance_id ?? false;
+
+        if (!is_numeric($instanceid)) {
+            $this->response->send_error(STATUS_400, 'Bad Request - Please provide valid instance ID.');
+        }
+
+        $storages = $this->request->payload->storages ?? false;
+
+        if (!$storages) {
+            $this->response->send_error(STATUS_400, 'Bad Request - Please provide storages.');
+        }
+
+        $backups = $this->request->payload->backups ?? false;
+
+        if (!$backups) {
+            $this->response->send_error(STATUS_400, 'Bad Request - Please provide backups to delete.');
+        }
+
+        $storagesdata = [];
+        foreach ($storages as $storage) {
+            $storagesdata[$storage->storage_id] = $storage;
+        }
+
+        $moopanelurl = get_config('local_moopanel', 'moopanelurl');
+        $responseurl = $moopanelurl . '/api/backups/delete/instance/' . $instanceid;
+
+        $backupmanager = new course_backup_manager();
 
         $data = [];
 
         foreach ($backups as $backup) {
-            $file = $CFG->dataroot . $backup->link;
+            $storagetype = $backup->storage_id;
+            $storage = $storagesdata[$storagetype] ?? false;
 
-            if (file_exists($file)) {
-                unlink($file);
-                $data[] = [
-                    "backup_result_id" => $backup->backup_result_id,
-                    "status" => true,
+            if (!$storage) {
+                $backupreport = [
+                    'backup_result_id' => $backup->backup_result_id,
+                    'status' => false,
+                    'message' => 'No storage data found.',
+                    'moodle_job_id' => null,
                 ];
-            } else {
-                $data[] = [
-                    "backup_result_id" => $backup->backup_result_id,
-                    "status" => false,
-                    "message" => "Backup file does not exist.",
-                ];
+                $data[] = $backupreport;
+                continue;
             }
+
+            // Define Adhoc task for delete course backup.
+            $task = new backup_course_delete();
+
+            $customdata = [
+                    'returnurl' => $responseurl,
+                    'storage' => $storage,
+                    'userid' => $userid,
+                    'backup' => $backup,
+            ];
+
+            $task->set_custom_data((object) $customdata);
+            if (method_exists($task, 'set_attempts_available')) {
+                $task->set_attempts_available(1);
+            }
+
+            // Set run task ASAP.
+            $task->set_next_run_time(time() - 1);
+            $isqueed = manager::queue_adhoc_task($task, true);
+
+            $existingtasks = manager::get_adhoc_tasks('\local_moopanel\task\backup_course_delete');
+
+            if (!$isqueed) {
+
+                $backupreport = [
+                        'backup_result_id' => $backup->backup_result_id,
+                        'status' => false,
+                        'message' => 'Request already in process.',
+                        'moodle_job_id' => $backupmanager->get_existing_backup_delete_task_id($existingtasks, $backup->backup_result_id),
+                ];
+
+                $data[] = $backupreport;
+                continue;
+            }
+
+            $a = 2;
+            $queedtask = end($existingtasks);
+            $backupreport = [
+                    'backup_result_id' => $backup->backup_result_id,
+                    'status' => true,
+                    'message' => 'Backup will be deleted.',
+                    'moodle_job_id' => $queedtask->get_id(),
+            ];
+
+            $data[] = $backupreport;
         }
+
         $this->response->add_body_key('backups', $data);
     }
 
@@ -228,7 +313,6 @@ class backups extends endpoint implements endpoint_interface {
         $responseurl = $moopanelurl . '/api/backups/restore/instance/' . $instanceid;
 
         $storage = $this->request->payload->storage ?? "local";
-        $backupmode = $this->request->payload->backup_mode ?? "auto";
         $credentials = $this->request->payload->credentials ?? [];
         $password = $this->request->payload->password ?? "";
         $userid = $this->request->payload->user_id ?? false;
@@ -246,18 +330,24 @@ class backups extends endpoint implements endpoint_interface {
         ];
 
         $task->set_custom_data((object) $customdata);
+        if (method_exists($task, 'set_attempts_available')) {
+            $task->set_attempts_available(1);
+        }
 
         // Set run task ASAP.
         $task->set_next_run_time(time() - 1);
         manager::queue_adhoc_task($task, true);
 
-        $taskwillrun = \core\task\manager::get_adhoc_tasks('\local_moopanel\task\backup_course_restore');
+        $taskwillrun = manager::get_adhoc_tasks('\local_moopanel\task\backup_course_restore');
 
         if (!$taskwillrun) {
             $this->response->send_error(STATUS_503, 'Service Unavailable - try again later.');
         }
 
+        $task = reset($taskwillrun);
+
         $this->response->add_body_key('status', true);
         $this->response->add_body_key('message', "Course backup will be restored.");
+        $this->response->add_body_key('moodle_job_id', $task->get_id());
     }
 }

@@ -137,30 +137,4 @@ class plugin_manager {
 
         return true;
     }
-
-    public function upgrade_noncore($url) {
-        global $CFG;
-
-        $handler = curl_init($url);
-        curl_setopt($handler, CURLOPT_POST, 0);
-        curl_setopt($handler, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($handler, CURLOPT_TIMEOUT, 60);
-
-        $response = curl_exec($handler);
-
-        $statuscode = curl_getinfo($handler, CURLINFO_HTTP_CODE);
-
-        curl_close($handler);
-
-        if (!$response) {
-            return false;
-        }
-
-        if ($statuscode != 200) {
-            return false;
-        }
-
-        return true;
-    }
-
 }
