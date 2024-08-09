@@ -63,11 +63,26 @@ class moodle_core extends endpoint implements endpoint_interface {
         $lastcheck = $updateschecker->get_last_timefetched();
         $updates = $updateschecker->get_update_info('core');
 
+        $coreupdates = [];
+        $currentversion = $CFG->release;
+
         if (!empty($updates)) {
             foreach ($updates as $update) {
-                $current = $CFG->release;
+                $coreupdate = [
+                    'compotent' => $update->component,
+                    'version' => (string)$update->version,
+                    'type' => $this->resolve_update_type($currentversion, $update->release),
+                    'release' => $update->release,
+                    'maturity' => $update->maturity,
+                    'url' => $update->url,
+                    'download' => $update->download,
+                    'downloadmd5' => $update->downloadmd5,
+                ];
+
+                $coreupdates[] = $coreupdate;
+
                 $new = $update->release;
-                $update->type = $this->resolve_update_type($current, $new);
+                $update->type = $this->resolve_update_type($currentversion, $new);
             }
         }
 
@@ -103,7 +118,7 @@ class moodle_core extends endpoint implements endpoint_interface {
         $this->response->add_body_key('current_version', $CFG->version);
         $this->response->add_body_key('current_release', $CFG->release);
         $this->response->add_body_key('last_check_for_updates', $lastcheck);
-        $this->response->add_body_key('update_available', $updates);
+        $this->response->add_body_key('update_available', $coreupdates);
         $this->response->add_body_key('update_log', $logs);
     }
 

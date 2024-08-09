@@ -29,14 +29,18 @@
 
 namespace local_moopanel\task;
 
+use cache_helper;
 use core\task\adhoc_task;
+use core\task\manager;
 use Exception;
 use local_moopanel\response;
 use local_moopanel\util\plugin_manager;
 use ZipArchive;
-use function Symfony\Component\Translation\t;
 
 class core_update extends adhoc_task {
+
+    private $filescount = 0;
+    private $errors;
 
     public function get_name() {
         return get_string('task:coreupdate', 'local_moopanel');
@@ -44,6 +48,8 @@ class core_update extends adhoc_task {
 
     public function execute() {
         global $CFG;
+
+        $this->errors = [];
 
         $id = $this->get_id();
 
@@ -69,6 +75,7 @@ class core_update extends adhoc_task {
         chmod($tempdir, 0777);
         $pluginmanager = new plugin_manager();
         $downloaded = $pluginmanager->download_zip_file($customdata->download, $tempdir);
+        // $downloaded = true; // Todo remove this and download file.
         if (!$downloaded) {
             remove_dir($tempdir);
             $response->add_body_key('message', 'Can not download zip file.');
@@ -94,35 +101,57 @@ class core_update extends adhoc_task {
             remove_dir($tempdir);
         }
 
-
-        /*
         set_config('maintenance_enabled', 1);
 
-        // mkdir($tempdir . '/copied');
+        mkdir($tempdir . '/copied');
+
+
 
         try {
             $source = $tempdir . '/extracted/moodle';
             $destination = $CFG->dirroot;
 
-            $this->recurse_move($source, $destination);
-            echo "Folder and files copied successfully.\n";
+            $this->copy_files($source, $destination);
         } catch (Exception $e) {
             echo 'Error: ' . $e->getMessage() . "\n";
         }
 
+
+        $errors = $this->errors;
+
+        $a = 2;
 
         // Include needle library.
         require_once($CFG->dirroot.'/lib/adminlib.php');
         require_once($CFG->dirroot.'/lib/pagelib.php');
         require_once($CFG->dirroot.'/lib/moodlelib.php');
         require_once($CFG->dirroot.'/lib/upgradelib.php');
+        require_once($CFG->libdir.'/clilib.php');         // cli only functions
+        require_once($CFG->libdir.'/environmentlib.php');
 
-        upgrade_core($customdata->version, true);
+        try {
+            upgrade_core($customdata->version, true);
+
+            upgrade_themes();
+
+        } catch (\Throwable $e) {
+            $a = 2;
+        }
+
 
         remove_dir($tempdir);
 
         set_config('maintenance_enabled', 0);
-*/
+
+        $upgradenoncore = new upgrade_noncore();
+        // Set run task ASAP.
+        $upgradenoncore->set_next_run_time(time() - 1);
+        manager::queue_adhoc_task($upgradenoncore, true);
+
+        if ($CFG->version == $customdata->version) {
+            $response->add_body_key('status', true);
+        }
+
         $response->send_to_email('test@test.com', 'Core update');
 
     }
@@ -133,30 +162,29 @@ class core_update extends adhoc_task {
      * @param string $src Source directory.
      * @param string $dst Destination directory.
      */
-    function recurse_move($src, $dst) {
-        if (!is_dir($src)) {
-            throw new Exception("Source directory does not exist: $src");
-        }
-
+    function copy_files($src,$dst) {
         $dir = opendir($src);
-        if (!is_dir($dst)) {
-            mkdir($dst, 0755, true);
+        if (is_dir($src)) {
+            if (!file_exists($dst)) {
+                $created = mkdir($dst, 0777, true);
+                if (!$created) {
+                    $this->errors[] = 'Cant create directory ' . $dst;
+                }
+            }
         }
 
-        while (false !== ($file = readdir($dir))) {
-            if (($file != '.') && ($file != '..')) {
-                $srcFile = $src . '/' . $file;
-                $dstFile = $dst . '/' . $file;
-
-                if (is_dir($srcFile)) {
-                    $this->recurse_move($srcFile, $dstFile);
-                    rmdir($srcFile); // Remove the source directory after moving its contents
-                } else {
-                    if (file_exists($dstFile)) {
-                        unlink($dstFile); // Delete the existing file
-                    }
-                    if (!rename($srcFile, $dstFile)) {
-                        throw new Exception("Failed to move $srcFile to $dstFile");
+        while(( $file = readdir($dir)) ) {
+            if (( $file != '.' ) && ( $file != '..' )) {
+                if ( is_dir($src . '/' . $file) ) {
+                    $this->copy_files($src .'/'. $file, $dst .'/'. $file);
+                }
+                else {
+                    $copied = copy($src .'/'. $file,$dst .'/'. $file);
+                    if (!$copied) {
+                        $this->errors[] = "$src ./$file -----> $dst";
+                    } else {
+                        chmod($dst . '/' . $file, 755);
+                        $this->filescount++;
                     }
                 }
             }
