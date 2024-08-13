@@ -41,7 +41,7 @@ class dashboard extends endpoint implements endpoint_interface {
     public function execute_request() {
         global $CFG, $SITE, $THEME, $PAGE;
 
-        $output = shell_exec('script/core_upgrade.sh');
+        //$output = shell_exec('script/core_upgrade.sh');
 
         $PAGE->set_context(\context_system::instance());
         $renderer = $PAGE->get_renderer('core');
@@ -60,5 +60,4 @@ class dashboard extends endpoint implements endpoint_interface {
         $this->response->add_body_key('theme', $CFG->theme ?? null);
         $this->response->add_body_key('moodle_version', $CFG->release ?? null);
     }
-
 }
