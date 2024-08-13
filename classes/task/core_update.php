@@ -29,9 +29,7 @@
 
 namespace local_moopanel\task;
 
-use cache_helper;
 use core\task\adhoc_task;
-use core\task\manager;
 use Exception;
 use local_moopanel\response;
 use local_moopanel\util\plugin_manager;
@@ -68,7 +66,7 @@ class core_update extends adhoc_task {
         if (!$tempdir) {
             $response->add_body_key('message', 'Problem creating temporary directory.');
             $response->post_to_url($customdata->returnurl);
-            $response->send_to_email('test@test.com', 'Core update');
+            $response->send_to_email('uros.virag@agiledrop.com', 'Core update');
             return;
         }
 
@@ -80,7 +78,7 @@ class core_update extends adhoc_task {
             remove_dir($tempdir);
             $response->add_body_key('message', 'Can not download zip file.');
             $response->post_to_url($customdata->returnurl);
-            $response->send_to_email('test@test.com', 'Core update');
+            $response->send_to_email('uros.virag@agiledrop.com', 'Core update');
             return;
         }
 
@@ -93,7 +91,7 @@ class core_update extends adhoc_task {
             remove_dir($tempdir);
             $response->add_body_key('message', 'Can not extract downloaded zip file.');
             $response->post_to_url($customdata->returnurl);
-            $response->send_to_email('test@test.com', 'Core update');
+            $response->send_to_email('uros.virag@agiledrop.com', 'Core update');
             return;
         }
 
@@ -102,10 +100,6 @@ class core_update extends adhoc_task {
         }
 
         set_config('maintenance_enabled', 1);
-
-        mkdir($tempdir . '/copied');
-
-
 
         try {
             $source = $tempdir . '/extracted/moodle';
@@ -119,41 +113,17 @@ class core_update extends adhoc_task {
 
         $errors = $this->errors;
 
-        $a = 2;
-
-        // Include needle library.
-        require_once($CFG->dirroot.'/lib/adminlib.php');
-        require_once($CFG->dirroot.'/lib/pagelib.php');
-        require_once($CFG->dirroot.'/lib/moodlelib.php');
-        require_once($CFG->dirroot.'/lib/upgradelib.php');
-        require_once($CFG->libdir.'/clilib.php');         // cli only functions
-        require_once($CFG->libdir.'/environmentlib.php');
-
-        try {
-            upgrade_core($customdata->version, true);
-
-            upgrade_themes();
-
-        } catch (\Throwable $e) {
-            $a = 2;
-        }
-
+        $output = shell_exec('../../local/moopanel/script/core_upgrade.sh');
 
         remove_dir($tempdir);
 
         set_config('maintenance_enabled', 0);
 
-        $upgradenoncore = new upgrade_noncore();
-        // Set run task ASAP.
-        $upgradenoncore->set_next_run_time(time() - 1);
-        manager::queue_adhoc_task($upgradenoncore, true);
-
         if ($CFG->version == $customdata->version) {
             $response->add_body_key('status', true);
         }
 
-        $response->send_to_email('test@test.com', 'Core update');
-
+        $response->send_to_email('uros.virag@agiledrop.com', 'Core update');
     }
 
     /**
