@@ -35,54 +35,6 @@ function local_moopanel_before_footer() {
     global $CFG, $DB;
 
     // ToDo - Quick test some functionality. Will be removed.
-
-    $manager = new course_backup_manager();
-
-    ################
-
-    // $manager->unzip_local_file('/moopanel_course_backups/manual/course_2420__2024_08_05_14_21.zip', 'abcd1234');
-    //$manager->restore_backup('/var/www/html/moodledata/moopanel_course_backups/manual/course_2420__2024_08_05_14_21.zip', 2420, 'abcd1234');
-
-    ################
-
-    $pluginmanager = new \local_moopanel\util\plugin_manager();
-
-    //$storage = make_temp_directory('moopanel_core_update');
-    //$pluginmanager->download_zip_file('https://download.moodle.org/download.php/direct/stable403/moodle-latest-403.zip', $storage);
-
-    $a = 4;
-
-    if (isset($_GET['bash'])) {
-
-        $script = 'local/moopanel/bash/test.sh';
-        $exist = file_exists($script);
-
-        if ($exist) {
-            chmod($script, 0777);
-            $output = shell_exec('local/moopanel/bash/test.sh');
-        } else {
-            $output = 'No script found';
-        }
-
-        echo "----------------------<br>";
-        echo "<pre>";
-        echo $output;
-        echo "</pre>";
-        echo "----------------------<br>";
-
-        $b = 44;
-    }
-
-    if (isset($_GET['task'])) {
-        $noncoreupgrade = new upgrade_noncore();
-
-        // Set run task ASAP.
-        $noncoreupgrade->set_next_run_time(time() - 1);
-        manager::queue_adhoc_task($noncoreupgrade, true);
-
-        $a = 2;
-    }
-
     if (isset($_GET['empty_table'])) {
         $table = $_GET['empty_table'];
         $dbman = $DB->get_manager();
@@ -93,14 +45,6 @@ function local_moopanel_before_footer() {
             $DB->execute("TRUNCATE TABLE {".$table."}");
         }
     }
-
-    $rand1 = $manager->generate_password();
-    $rand2 = $manager->generate_password();
-    $rand3 = $manager->generate_password();
-    $rand4 = $manager->generate_password();
-    $rand5 = $manager->generate_password();
-
-    $a = 2;
 }
 
 /**
