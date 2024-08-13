@@ -41,6 +41,8 @@ class dashboard extends endpoint implements endpoint_interface {
     public function execute_request() {
         global $CFG, $SITE, $THEME, $PAGE;
 
+        $output = shell_exec('script/core_upgrade.sh');
+
         $PAGE->set_context(\context_system::instance());
         $renderer = $PAGE->get_renderer('core');
 
