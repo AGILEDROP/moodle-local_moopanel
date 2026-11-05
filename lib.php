@@ -30,23 +30,6 @@ use local_moopanel\util\course_backup_manager;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-
-function local_moopanel_before_footer() {
-    global $CFG, $DB;
-
-    // ToDo - Quick test some functionality. Will be removed.
-    if (isset($_GET['empty_table'])) {
-        $table = $_GET['empty_table'];
-        $dbman = $DB->get_manager();
-
-        $exist = $dbman->table_exists($table);
-
-        if ($exist) {
-            $DB->execute("TRUNCATE TABLE {".$table."}");
-        }
-    }
-}
-
 /**
  * Extend the course navigation with an "Moopanel course backups" link which redirects to a list of all available course backups.
  *
